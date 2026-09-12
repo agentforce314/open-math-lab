@@ -1,0 +1,17 @@
+{
+  "id": "n-queens",
+  "scored_at": "2026-09-12T17:50:33Z",
+  "rubric_version": "v0-stub",
+  "dimensions": {
+    "formalizable": 4.5,
+    "partial_progress_paths": 4.5,
+    "literature_clarity": 5.0,
+    "compute_bounded": 4.0,
+    "agent_skill_fit": 4.0,
+    "crackpot_risk": 0.0
+  },
+  "budget_tokens_estimate": 300000,
+  "recommendation": "formalize-only",
+  "rationale": "OPE-3 fresh dossier: target (a) existence iff n\u22602,3; rubric 18/18/16/16/20 = 88 (prime range) as known-classical formalize-only; Level B namesake n_queens_exists_iff via Fin n \u2192 Fin n pin; Level A prior art PR #174; Mathlib v4.10.0 ZERO named n-queens; Pauls 1874 / HLM 1969 / Bernhardsson 1991 / Bell\u2013Stevens 2009; default no claim",
+  "overall_1_to_5": 4.4
+}
