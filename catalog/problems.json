@@ -2959,20 +2959,24 @@
     {
       "id": "n-queens",
       "title": "n-queens existence theorem: non-attacking placement exists iff n ≠ 2,3 (board-named, formalize-only)",
-      "status": "shortlisted",
+      "status": "formalized",
       "domain": "combinatorics",
       "score": 88,
       "expected": "known-classical",
-      "note": "OPE-3 Scout fresh full-process dossier (parent OPE-2, board-named). Disambiguated (a) existence / (b) counting A000170 / (c) Simkin asymptotics / (d) completion NP-complete / (e) toroidal Pólya; TARGET = (a) existence iff n≠2,3, expected known-classical, formalize-only, score 88. Pin: q : Fin n → Fin n, Function.Injective + both diagonal families subtraction-free; n=0 vacuous convention. Level A prior art: PR #174 ProofLab/NQueens.lean (IsNQueens list encoding; queens_two_none / queens_three_none / queens_four [1,3,0,2] / queens_four_alt) — cited as prior art, not a solution; namesake was residual there. Mathlib v4.10.0 a719ba5c31 grep 2026-09-12: ZERO named n-queens theorem (only 'Queen Mary University' comment). Literature: Pauls 1874; Hoffman–Loessi–Moore 1969; Bernhardsson 1991; Bell–Stevens 2009. Out of scope: Q(n)/92, toroidal, completion, asymptotics. Default no claim. Director OPE-2 decides next step (Formalist Level B).",
+      "note": "OPE-2 close-out 2026-09-12 (Director): FORMALIZED, no claim. Full process run: OPE-3 Scout → OPE-4 stub → OPE-5 Attack Lead → OPE-6 Formalist (zero sorry) → OPE-7 Adversarial Reviewer (APPROVE WITH RESIDUALS) → OPE-2 close-out. Lean: ProofLab/NQueensTheorem.lean, n_queens_exists_iff + queens_exists_of_four_le, #print axioms = propext/Classical.choice/Quot.sound. Residuals: no bridge to Level A IsNQueens (#174); readings (b) counting / (c) asymptotics / (d) completion / (e) toroidal unproved; n=0 vacuous; toolchain single-machine. LOG.md erratum (typed f₂ ℕ-truncation; e2_no_fix needs 4≤n). Claim packet problems/n-queens/CLAIM_PACKET.md: no claim / internal note. — Prior: OPE-3 Scout fresh full-process dossier (parent OPE-2, board-named). Disambiguated (a) existence / (b) counting A000170 / (c) Simkin asymptotics / (d) completion NP-complete / (e) toroidal Pólya; TARGET = (a) existence iff n≠2,3, expected known-classical, formalize-only, score 88. Pin: q : Fin n → Fin n, Function.Injective + both diagonal families subtraction-free; n=0 vacuous convention. Level A prior art: PR #174 ProofLab/NQueens.lean (IsNQueens list encoding; queens_two_none / queens_three_none / queens_four [1,3,0,2] / queens_four_alt) — cited as prior art, not a solution; namesake was residual there. Mathlib v4.10.0 a719ba5c31 grep 2026-09-12: ZERO named n-queens theorem (only 'Queen Mary University' comment). Literature: Pauls 1874; Hoffman–Loessi–Moore 1969; Bernhardsson 1991; Bell–Stevens 2009. Out of scope: Q(n)/92, toroidal, completion, asymptotics. Default no claim. Director OPE-2 decides next step (Formalist Level B).",
       "skill_packs": [
         "combinatorics",
         "formalization"
       ],
       "artifacts": [
+        "attacks/n-queens-20260912-180329/",
+        "attacks/n-queens-20260912-180329/ADVERSARIAL_REVIEW.md",
         "catalog/problems/n-queens/",
         "catalog/problems/n-queens/DOSSIER.json",
         "catalog/problems/n-queens/STATEMENT.md",
-        "proofs/lean-project/ProofLab/NQueens.lean"
+        "problems/n-queens/CLAIM_PACKET.md",
+        "proofs/lean-project/ProofLab/NQueens.lean",
+        "proofs/lean-project/ProofLab/NQueensTheorem.lean"
       ],
       "scout_issue": "OPE-3",
       "tickets": [
@@ -2981,7 +2985,11 @@
         "OPE-1418",
         "OPE-1419",
         "OPE-1423",
-        "OPE-1424"
+        "OPE-1424",
+        "OPE-4",
+        "OPE-5",
+        "OPE-6",
+        "OPE-7"
       ],
       "parent_issue": "OPE-2",
       "mathlib_gap": true,
@@ -3002,9 +3010,13 @@
         "lean": "proofs/lean-project/ProofLab/NQueens.lean"
       },
       "residual_risks": [
-        "R1 n=0 convention (pin uses n≠2∧n≠3)",
-        "R2 both diagonal families load-bearing; subtraction-free encoding must be reviewed",
-        "R3 1-indexed literature construction vs 0-indexed Fin; n mod 6 ∈ {2,3} list surgery"
+        "no Lean bridge IsNQueens (List.ofFn q) ↔ NonAttacking q (Level A #174 vs Level B)",
+        "only reading (a) existence proved; (b) counting, (c) asymptotics, (d) completion, (e) toroidal untouched",
+        "definition fidelity is human judgement (Scout/Director/Reviewer)",
+        "toolchain trust: single machine, no lean4checker",
+        "no priority/novelty; Mathlib screen local-pin only",
+        "n ≠ 2 ∧ n ≠ 3 includes vacuous n = 0",
+        "unused import ProofLab.NQueens (harmless)"
       ],
       "feasibility": {
         "id": "n-queens",
@@ -3022,7 +3034,22 @@
         "recommendation": "formalize-only",
         "rationale": "OPE-3 fresh dossier: target (a) existence iff n≠2,3; rubric 18/18/16/16/20 = 88 (prime range) as known-classical formalize-only; Level B namesake n_queens_exists_iff via Fin n → Fin n pin; Level A prior art PR #174; Mathlib v4.10.0 ZERO named n-queens; Pauls 1874 / HLM 1969 / Bernhardsson 1991 / Bell–Stevens 2009; default no claim",
         "overall_1_to_5": 4.4
-      }
+      },
+      "lean_artifact_level_b": "proofs/lean-project/ProofLab/NQueensTheorem.lean",
+      "level_b_theorems": [
+        "ProofLab.NQueensTheorem.n_queens_exists_iff",
+        "ProofLab.NQueensTheorem.queens_exists_of_four_le"
+      ],
+      "reviewer_issue": "OPE-7",
+      "reviewer_verdict": "APPROVE WITH RESIDUALS",
+      "closeout_issue": "OPE-2",
+      "claim": "none",
+      "prs_fork": [
+        "https://github.com/agentforce314/open-math-lab/pull/3",
+        "https://github.com/agentforce314/open-math-lab/pull/5",
+        "https://github.com/agentforce314/open-math-lab/pull/6",
+        "https://github.com/agentforce314/open-math-lab/pull/7"
+      ]
     },
     {
       "id": "brocard-factorial-square",

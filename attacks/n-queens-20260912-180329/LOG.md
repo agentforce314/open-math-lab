@@ -7,6 +7,25 @@
 **status: informal** — nothing below is a proof until OPE-6's `lake build` is green with no `sorryAx`.
 **Novelty: none.** Classical theorem (Pauls 1874; Hoffman–Loessi–Moore 1969; Bernhardsson 1991). The lab deliverable is the machine-checked artifact, not the mathematics.
 
+> **Superseded (2026-09-12, Director close-out, OPE-2):** OPE-6 formalized this route in
+> `proofs/lean-project/ProofLab/NQueensTheorem.lean` (zero `sorry`, `#print axioms` =
+> `[propext, Classical.choice, Quot.sound]`), and OPE-7 reviewed it
+> (`ADVERSARIAL_REVIEW.md`, APPROVE WITH RESIDUALS). This log is now **prior informal
+> reasoning**, kept for the audit trail.
+>
+> **Erratum (confirmed by OPE-6 Formalist and OPE-7 Reviewer, fixed in place below):**
+> 1. The *typed* Lean `f₂` pieces P3/P4 in "Lean-shaped lemma list" were written
+>    `2 * r - n / 2 + 2` / `2 * r - 3 * (n / 2) + 2`. In ℕ the P4 form truncates
+>    (e.g. `n = 8, r = 5`: typed 2, intended 0; `n = 14, r = 10`: typed 2, intended 1 —
+>    166 mismatched rows over `8 ≤ n ≤ 1000`, one per board), which would have broken
+>    `e2_inj`. The mathematics in §E2 and `verify_construction.py` (signed ints) were
+>    correct; only the ℕ transcription was wrong. Correct forms, as compiled in Lean:
+>    `2 * r + 2 - n / 2` / `2 * r + 2 - 3 * (n / 2)`.
+> 2. `e2_no_fix` as typed (no size hypothesis) is **false** at `n = 2`
+>    (`f₂ 2 0 = 0`); the "(as `h ≥ 2`)" remark was unsupported. Lean adds `4 ≤ n`,
+>    discharged from the assembly's `8 ≤ n`. This is the only hypothesis delta between
+>    this log and the landed file (OPE-7 §3 table).
+
 ## Target (frozen by Director, OPE-4 pin, `ProofLab.NQueensTheorem`)
 
 ```lean
@@ -77,7 +96,7 @@ Handy table (all linear in `r`):
 - **`e2_inj`**: within a piece, `2r + c = 2s + c ⇒ r = s`. P1 vs P2: `s − r = h` but `0 ≤ r`, `s < h`. P3 vs P4: `s − r = h` but `h ≤ r`, `s < 2h`. First half vs second half: opposite parity (table), impossible. `omega` (6 cross-cases, all linear; parity via literal `2`).
 - **`e2_anti`** (uses `h % 3 = 1`): within a piece `3r + c = 3s + c ⇒ r = s`. Cross-piece differences of the constants are `2h`, `2h−3`, `4h−3`, `3`, `2h−3`, `2h` (for P1P2, P1P3, P1P4, P2P3, P2P4, P3P4): each `3(s−r) = ±const` forces `3 ∣ 2h` or `3 ∣ 4h` (impossible, `h % 3 = 1`) except P2–P3 where `3(s − r) = −3 ⇒ s = r − 1 < h`, contradicting `s ≥ h`. `omega` with `h % 3 = 1`.
 - **`e2_main`** (uses `h ≥ 4`): within a piece `−r + c = −s + c ⇒ r = s`. P1P2 and P3P4: `s − r = 2h ≥ n`, impossible. P1P4: `s − r = 4h − 3 ≥ n`. P2P3: `r − s = 3` with `r < h ≤ s`. P1P3: `s − r = 2h − 3` with `s < (3h−2)/2`, so `2h − 3 < 3h/2 − 1 ⇒ h < 4`. P2P4: `s − r = 2h − 3` with `r > h/2`, `s ≤ 2h − 1`, so `2h − 3 ≤ (3h−3)/2 ⇒ h ≤ 3`. `omega` with `4 ≤ h`.
-- **`e2_no_fix`**: P1 `r = 1 − h`; P2 `r = h + 1 > h`; P3 `r = h − 2 < h`; P4 `r = 3h − 2 ≥ 2h` (as `h ≥ 2`). Each contradicts the piece's range. `omega`.
+- **`e2_no_fix`**: P1 `r = 1 − h`; P2 `r = h + 1 > h`; P3 `r = h − 2 < h`; P4 `r = 3h − 2 ≥ 2h` (needs `h ≥ 2`, i.e. **`4 ≤ n` — hypothesis missing in the original typed lemma, erratum**). Each contradicts the piece's range. `omega`.
 
 ### O — `n` odd, `n ≥ 5`: corner extension of `m := n − 1`
 
@@ -145,7 +164,7 @@ def GoodEven (n : ℕ) (f : ℕ → ℕ) : Prop :=
 def f₁ (n r : ℕ) : ℕ := if r < n / 2 then 2 * r + 1 else 2 * r - n
 def f₂ (n r : ℕ) : ℕ :=
   if r < n / 2 then (if 2 * r ≤ n / 2 then 2 * r + n / 2 - 1 else 2 * r - n / 2 - 1)
-  else (if 2 * r < 3 * (n / 2) - 2 then 2 * r - n / 2 + 2 else 2 * r - 3 * (n / 2) + 2)
+  else (if 2 * r < 3 * (n / 2) - 2 then 2 * r + 2 - n / 2 else 2 * r + 2 - 3 * (n / 2))  -- erratum: `+ 2` before `-` (ℕ truncation); see header
 
 -- 1–5 (E1).  Each: `intro ..; simp only [f₁] at *; split_ifs at * <;> omega`
 theorem e1_lt     (n : ℕ) (hn : n % 2 = 0) : ∀ r, r < n → f₁ n r < n
@@ -160,7 +179,7 @@ theorem e2_lt     (n : ℕ) (hn : n % 6 = 2) : ∀ r, r < n → f₂ n r < n
 theorem e2_inj    (n : ℕ) (hn : n % 6 = 2) : ∀ r s, r < n → s < n → f₂ n r = f₂ n s → r = s
 theorem e2_anti   (n : ℕ) (hn : n % 6 = 2) : ∀ r s, r < n → s < n → r ≠ s → r + f₂ n r ≠ s + f₂ n s
 theorem e2_main   (n : ℕ) (hn : n % 6 = 2) (h8 : 8 ≤ n) : ∀ r s, r < n → s < n → r ≠ s → r + f₂ n s ≠ s + f₂ n r
-theorem e2_no_fix (n : ℕ) (hn : n % 6 = 2) : ∀ r, r < n → f₂ n r ≠ r
+theorem e2_no_fix (n : ℕ) (hn : n % 6 = 2) (h4 : 4 ≤ n) : ∀ r, r < n → f₂ n r ≠ r  -- erratum: `4 ≤ n` added (false at n = 2); see header
 theorem goodEven_f₂ (n : ℕ) (hn : n % 6 = 2) (h8 : 8 ≤ n) : GoodEven n (f₂ n)
 
 -- 11. Even boards, n ≥ 4.

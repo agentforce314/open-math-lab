@@ -1,7 +1,7 @@
 {
   "id": "n-queens",
   "title": "n-queens existence theorem: non-attacking placement exists iff n ≠ 2,3 (board-named, formalize-only)",
-  "status": "shortlisted",
+  "status": "formalized",
   "domain": "combinatorics",
   "score": 88,
   "scores": {
@@ -133,6 +133,22 @@
   "parent_issue": "OPE-2",
   "history": {
     "ope1419_dossier": "2026-09-11 Scout OPE-1419 scored 86 for the small-board Level A prime; superseded by this fresh full-process dossier (scope now the namesake Level B).",
-    "ope1424_formalist": "Level A landed, PR #174, zero sorry."
+    "ope1424_formalist": "Level A landed, PR #174, zero sorry.",
+    "ope2_closeout": "2026-09-12 Director close-out: formalized. OPE-4 stub (PR #4) → OPE-5 attack log status:informal (PR #5) → OPE-6 Lean proof zero sorry (PR #6) → OPE-7 Adversarial Reviewer APPROVE WITH RESIDUALS (PR #7) → OPE-2 integration + LOG.md erratum + claim packet (PR #8). No claim."
+  },
+  "closeout": {
+    "issue": "OPE-2",
+    "lean_file": "proofs/lean-project/ProofLab/NQueensTheorem.lean",
+    "theorems": ["n_queens_exists_iff", "queens_exists_of_four_le"],
+    "axioms": ["propext", "Classical.choice", "Quot.sound"],
+    "reviewer_issue": "OPE-7",
+    "reviewer_verdict": "APPROVE WITH RESIDUALS",
+    "claim": "none",
+    "claim_packet": "problems/n-queens/CLAIM_PACKET.md",
+    "definition_risks_disposition": {
+      "R1": "n=0 vacuous convention confirmed by Scout, Director, Reviewer; RHS n≠2∧n≠3",
+      "R2": "Reviewer negative controls: each NonAttacking clause load-bearing (weakened predicates accept the matching bad board)",
+      "R3": "discharged by Attack Lead 0-indexed transcription + Lean; a new ℕ-truncation slip in the typed f₂ got past the signed-int Python check and was caught by Lean — LOG.md erratum"
+    }
   }
 }
