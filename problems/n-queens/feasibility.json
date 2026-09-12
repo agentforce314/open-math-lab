@@ -1,0 +1,25 @@
+{
+  "id": "n-queens",
+  "scored_at": "2026-09-12T17:50:33Z",
+  "rubric_version": "v0-stub",
+  "dimensions": {
+    "formalizable": 4.5,
+    "partial_progress_paths": 4.5,
+    "literature_clarity": 5.0,
+    "compute_bounded": 4.0,
+    "agent_skill_fit": 4.0,
+    "crackpot_risk": 0.0
+  },
+  "budget_tokens_estimate": 300000,
+  "recommendation": "formalize-only",
+  "rationale": "OPE-3 fresh dossier: target (a) existence iff n≠2,3; rubric 18/18/16/16/20 = 88 (prime range) as known-classical formalize-only; Level B namesake n_queens_exists_iff via Fin n → Fin n pin; Level A prior art PR #174; Mathlib v4.10.0 ZERO named n-queens; Pauls 1874 / HLM 1969 / Bernhardsson 1991 / Bell–Stevens 2009; default no claim",
+  "overall_1_to_5": 4.4,
+  "outcome": {
+    "closed_at": "2026-09-12",
+    "disposition": "formalized",
+    "claim": "none",
+    "tokens_actual_estimate": "Scout ~40k + Formalist stub ~20k + Attack ~45k + Formalist proof ~120k (Wave 1 of 2) + Reviewer ~80k ≈ 305k vs 300k estimate",
+    "score_after": 88,
+    "score_note": "score unchanged: feasibility prediction was accurate (one Formalist wave, no dead ends on the funded route)"
+  }
+}

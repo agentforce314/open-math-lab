@@ -1,0 +1,16 @@
+{
+  "attack_id": "n-queens-20260912-180329",
+  "problem_id": "n-queens",
+  "status": "closed-formalized",
+  "started_at": "2026-09-12T18:03:29Z",
+  "strategy": "explicit-construction-0-indexed",
+  "agent": "attack-lead",
+  "budget_tokens": 60000,
+  "tokens_used": 45000,
+  "notes": "OPE-5: 0-indexed closed forms per n mod 6, brute-check vs NonAttacking pin, Lean lemma plan",
+  "closed_at": "2026-09-12T18:15:00Z",
+  "outcome": "all residue classes closed at status: informal; 0-indexed formulas E1/E2/corner; verify_construction.py PASS 4<=n<=1000; Lean lemma list + 1-2 wave estimate | OPE-6: formalized zero-sorry in ProofLab/NQueensTheorem.lean; OPE-7: APPROVE WITH RESIDUALS (ADVERSARIAL_REVIEW.md); LOG.md erratum (typed f2 P3/P4 N-truncation, e2_no_fix needs 4<=n) recorded at OPE-2 close-out",
+  "ticket": "OPE-5",
+  "handoff": "OPE-6 (Formalist) — see LOG.md 'Lean-shaped lemma list'",
+  "closeout": "OPE-2 (Director, 2026-09-12): no claim"
+}

@@ -1,65 +1,154 @@
 {
   "id": "n-queens",
-  "title": "n-queens small boards (n=2 none / n=3 none / n=4 a witness, formalize-only)",
+  "title": "n-queens existence theorem: non-attacking placement exists iff n ≠ 2,3 (board-named, formalize-only)",
   "status": "formalized",
   "domain": "combinatorics",
-  "score": 86,
+  "score": 88,
   "scores": {
     "formalizability": 18,
-    "partial_progress": 16,
+    "partial_progress": 18,
     "attack_surface": 16,
     "verification_budget": 16,
     "crackpot_resistance": 20
   },
-  "expected": "known-classical",
-  "why_not_classical": "Classical Gauss 1850 / eight-queens: place n queens on an n×n board with no shared row, column, or diagonal. Completely classical. Value is a Mathlib/ProofLab contribution (List / Fin / Nodup exist; ZERO named nQueens / NQueens / eightQueens / isQueens theorem in Mathlib+Archive+ProofLab; only queen hit is a Queen Mary University comment). Do NOT re-discover as novel. Existence iff n≠2,3 / 92 solutions on n=8 are residual of this id. Langford is consumed #160 (between-counts ≠ diagonals). Gray is consumed #163. OLS is consumed #157. a4-klein-four is consumed #172. simpson-paradox is consumed #171. Brocard factorial-square is the leftover of this shortlist.",
-  "recommendation": "OPE-1419 RECOMMENDED PRIME. Catalog-audit prime after OPE-1405 mill CONSUMED (#171 simpson-paradox Level A + #172 a4-klein-four Level A). NOT a prize leftover, NOT Director-invented, NOT krenn-gu / hou-zeng-pfc / sun-135, NOT Level B revival of simpson_paradox / a4_klein_four / langford_pairing / gray_code / orthogonal_latin_squares. Independent Mathlib pin grep this run (List / Fin / Nodup HIT as glue; named nQueens / eightQueens / isQueens ZERO). Mill NOW: finite small-board witnesses beside Brocard factorial squares. Score 86 this run: List/Fin/Nodup waiting (formalizability 18); Level A n=2 none / n=3 none / n=4 [1,3,0,2] (partial 16); namesake is undergraduate Gauss n-queens (attack 16); Lean-only finite (verification 16); classical (crackpot 20). v1 pins named small-board Level A; namesake residual. Existence iff n≠2,3 residual.",
-  "mathlib_gap_grep_2026_09_11_ope1419": "Pin mathlib a719ba5c3115 (v4.10.0). Independent of OPE-1405 scores. rg nQueens / NQueens / n_queens / eightQueens / EightQueens / isQueens / queens_problem / eight_queens over Mathlib/ + Archive + ProofLab → ZERO named n-queens theorem (only queen hit: Queen Mary University comment in PushoutI.lean L36). Defs HIT: List / GetElem / List.Nodup (Data/List/Nodup.lean properties); Fin / Fin.val; Function.Injective Logic/Function/Defs.lean L101 (optional column glue, not namesake). Negative control: turan → Turan.lean isTuranMaximal_iff_nonempty_iso_turanGraph L300. Already-in this run (do not re-prove): catalan_eq_centralBinom_div Catalan.lean L109; numDerangements Derangements/Finite.lean L62; exists_prime_lt_and_le_two_mul Bertrand.lean L211; frobeniusNumber_pair FrobeniusNumber.lean L52; exists_mono_in_high_dimension HalesJewett.lean L445; wilsons_lemma Wilson.lean L38; exists_infinite_primes Prime/Basic.lean L82; Nat.factorial Factorial/Basic.lean L29; pow_two Algebra/Group/Defs.lean L581; isSimpleGroup_five Alternating.lean L289; IsKleinFour KleinFour.lean L51. Already-consumed: SimpsonParadox Level A (#171); A4KleinFour Level A (#172); Taxicab1729 #168; EulerBrick #169; LangfordPairing #160; GrayCode #163; OrthogonalLatinSquares #157.",
-  "statement_pin_required": {
-    "convention": "theorem n_queens: exists iff n≠2,3, namesake. Level A may land only n=2 none / n=3 none / n=4 [1,3,0,2], not labelled n-queens / eight-queens / Gauss.",
-    "landmines": [
-      "Do not re-prove List / Fin / Nodup / GetElem.",
-      "Not Langford (consumed #160). Between-counts ≠ diagonals.",
-      "Not Gray (consumed #163). Hamming listings ≠ queen attacks.",
-      "Not OLS / Euler officers / Lo Shu (consumed #157).",
-      "Not graceful trees (heuristic mill).",
-      "Not a4-klein-four / 15-puzzle (consumed #172). Do not sorry 15-puzzle.",
-      "Not simpson-paradox (consumed #171).",
-      "Not existence iff n≠2,3 / 92 solutions. Residual of this id. Do not sorry it.",
-      "Not brocard-factorial-square (OPE-1419 leftover). Do not prove 4!+1=5² here.",
-      "Do not re-prime the consumed mill list.",
-      "Leave OPE-403 alone. Leave OPE-1195 leftover status alone."
-    ],
-    "canonical_source": "Gauss 1850 / eight-queens small boards. Type pin: List (Fin n) / Nodup / diagonal inequalities. Langford is a different consumed theorem. Brocard factorial-square is the leftover of this shortlist."
+  "score_justification": {
+    "formalizability": "18: `q : Fin n → Fin n` + `Function.Injective` (Mathlib Logic/Function/Defs.lean L101) + two subtraction-free diagonal inequalities; exactly one new def (`NonAttacking`), no theory gap. Not 20 because the def is new (not an existing Mathlib notion).",
+    "partial_progress": "18: clear ladder — Level A small boards (already landed PR #174) → B1 nonexistence n=2,3 (`decide`) → B2 existence n≥4 by explicit construction, itself split n mod 6 ∉{2,3} / =2 / =3. Each rung is a standalone zero-sorry Lean artifact. Not 20 because none of the rungs has value outside ProofLab (theorem is classical).",
+    "attack_surface": "16: combinatorics + formalization skill packs apply directly; engine is `decide`/`fin_cases` for B1 and `omega` casework for B2; Mathlib supplies >50% of definitions (+5 boost from a base of ~11 for 'standard techniques, custom casework needed'). Penalty risk: the n mod 6 ∈ {2,3} adjustments are fiddly 1-indexed list surgery that must be re-expressed as a closed-form Fin function before omega can see it.",
+    "verification_budget": "16: statement type-checks instantly; B1 `decide` over 4 and 27 functions is instant; B2 is omega on linear inequalities per case — expected build <5 min. Not 20 because a naive `decide` on `Fin n → Fin n` for larger n would blow up, so the proof must be structural, and omega on nested if-then-else with mod side conditions can time out without manual case splits.",
+    "crackpot_resistance": "20: Lean type-checks the pinned statement; counterexamples (an attacking pair) are computable; consensus definition; authoritative references (Pauls 1874; Bell–Stevens 2009 survey; OEIS A000170)."
   },
-  "feasibility_shape": "Level A: n=2 none / n=3 none / n=4 [1,3,0,2]; optional extra [2,0,3,1]; not labelled n-queens / eight-queens / Gauss. Level B: namesake exists iff n≠2,3. Cap two levels. No solution-count 92. Honest partial allowed (comment residual, not sorry). One-wave Formalist shape. Definition risk: do not label theorems langford_* / gray_* / latin_* as namesake; zero sorry.",
-  "infra_carry_over": [
-    "Mathlib List / Fin / Nodup / GetElem — USE; DO NOT re-prove",
-    "Function.Injective Defs.lean L101 — optional column glue, not namesake",
-    "ProofLab/LangfordPairing.lean — consumed #160, DO NOT revive Level B / Skolem",
-    "ProofLab/GrayCode.lean — consumed #163, DO NOT revive Level B / hypercube Hamiltonian",
-    "ProofLab/SimpsonParadox.lean — consumed #171, DO NOT revive Level B / Bayes / FKG",
-    "ProofLab/A4KleinFour.lean — consumed #172, DO NOT revive Level B / KleinFour / A4 order-6",
-    "Lab combinatorics + formalization skill packs"
+  "verdict": "prime target (80–100) — but as formalize-only; NOT a research claim",
+  "expected": "known-classical",
+  "recommended_target": "(a) existence: (∃ q : Fin n → Fin n, NonAttacking q) ↔ (n ≠ 2 ∧ n ≠ 3). Deliverable = full zero-sorry Lean proof of the namesake (Level B). See STATEMENT.md for the exact pin.",
+  "disambiguation": [
+    {
+      "reading": "(a) existence iff n ∉ {2,3}",
+      "scores": {"formalizability": 18, "partial_progress": 18, "attack_surface": 16, "verification_budget": 16, "crackpot_resistance": 20},
+      "total": 88,
+      "literature": "settled: Pauls 1874; Ahrens 1910; Hoffman–Loessi–Moore 1969; Bernhardsson 1991",
+      "decision": "TARGET (known-classical, formalize-only)"
+    },
+    {
+      "reading": "(b) counting Q(n), OEIS A000170, Q(8)=92",
+      "scores": {"formalizability": 15, "partial_progress": 10, "attack_surface": 8, "verification_budget": 6, "crackpot_resistance": 15},
+      "total": 54,
+      "literature": "no closed form known; terms known to n=27 (Preußer 2016); Bell–Stevens 2009 §2",
+      "decision": "out of scope: 'closed form' is not a well-posed target; Q(8)=92 in Lean needs kernel decide over 8^8 or 40320 perms (too slow) or native_decide (not an accepted gate)"
+    },
+    {
+      "reading": "(c) asymptotics Q(n) = ((1±o(1)) n e^{-α})^n, α≈1.942",
+      "scores": {"formalizability": 3, "partial_progress": 8, "attack_surface": 3, "verification_budget": 2, "crackpot_resistance": 12},
+      "total": 28,
+      "literature": "Simkin 2021 arXiv:2107.13460 (leading order settled); Luria–Simkin lower bound",
+      "decision": "refuse: entropy / absorption / random-greedy methods, nothing in Mathlib v4.10.0; refinements are genuine research far beyond lab tooling"
+    },
+    {
+      "reading": "(d) n-queens completion is NP-complete",
+      "scores": {"formalizability": 4, "partial_progress": 8, "attack_surface": 4, "verification_budget": 5, "crackpot_resistance": 15},
+      "total": 36,
+      "literature": "Gent, Jefferson, Nightingale 2017 JAIR 59:815–848",
+      "decision": "refuse: Mathlib v4.10.0 has Turing machines / partial recursive functions but no NP / reductions framework; would be infrastructure, not the named problem"
+    },
+    {
+      "reading": "(e) toroidal / modular queens exist iff gcd(n,6)=1",
+      "scores": {"formalizability": 17, "partial_progress": 16, "attack_surface": 15, "verification_budget": 14, "crackpot_resistance": 18},
+      "total": 80,
+      "literature": "Pólya 1918 (in Ahrens); OEIS A051906; Bell–Stevens 2009 §3",
+      "decision": "out of scope: prime-range but a DIFFERENT theorem from the board-named namesake; candidate for a separate id `toroidal-queens` if the board wants a follow-up. Not to be milled under this id."
+    }
   ],
-  "estimated_token_budget": "100k",
-  "skill_packs": [
-    "combinatorics",
-    "formalization"
+  "statement_pin": {
+    "informal": "For n : ℕ, a non-attacking placement (row ↦ column, injective, no shared anti-diagonal i+q(i), no shared main diagonal i−q(i)) exists iff n ≠ 2 and n ≠ 3.",
+    "lean": "def NonAttacking {n : ℕ} (q : Fin n → Fin n) : Prop := Function.Injective q ∧ ∀ i j : Fin n, i ≠ j → (i : ℕ) + (q i : ℕ) ≠ (j : ℕ) + (q j : ℕ) ∧ (i : ℕ) + (q j : ℕ) ≠ (j : ℕ) + (q i : ℕ)\n\ntheorem n_queens_exists_iff (n : ℕ) : (∃ q : Fin n → Fin n, NonAttacking q) ↔ (n ≠ 2 ∧ n ≠ 3)",
+    "convention": "n = 0 counts (empty placement); RHS is `n ≠ 2 ∧ n ≠ 3`, not `n = 1 ∨ n ≥ 4`. Main-diagonal condition is written subtraction-free as `i + q j ≠ j + q i`.",
+    "bridge_to_pr174_list_encoding": "optional Level C glue `IsNQueens (List.ofFn q) ↔ NonAttacking q`; NOT required for done. Recommendation: leave ProofLab/NQueens.lean untouched, land the namesake in a new file.",
+    "done_when": [
+      "lake build of the new file exit 0; theorem statement matches pin verbatim",
+      "#print axioms shows no sorryAx",
+      "Adversarial Reviewer written approval of the definition (injective + both diagonal families + subtraction-free encoding + n=0 convention)",
+      "ledger/catalog → formalized (Level B); no claim packet"
+    ]
+  },
+  "definition_risks_top3": [
+    "R1 n=0 convention: textbook says 'n=1 or n≥4'; Fin-encoding gives the empty placement at n=0, so the pin uses `n ≠ 2 ∧ n ≠ 3`. Reviewer must confirm this is the intended theorem and not a loophole.",
+    "R2 diagonal encoding: both families must be present (a single family or `Nodup` alone is a strictly weaker, wrong statement). The subtraction-free form `i + q j ≠ j + q i` must be checked equivalent to `(i:ℤ) − q i ≠ (j:ℤ) − q j`. Do not use ℕ truncated subtraction.",
+    "R3 construction transcription: Hoffman–Loessi–Moore / Bernhardsson is stated 1-indexed with list surgery for n mod 6 ∈ {2,3} (swap 1,3 & move 5; move 2 & move 1,3). Off-by-one and orientation (row↦column vs column↦row) errors are the likely failure. Scout sanity-checked the 0-indexed transcription by brute force for n = 4..199 (0 failures; n=4 gives [1,3,0,2] = PR #174 witness) — this is a transcription check, not a proof."
   ],
-  "scored_at": "2026-09-11",
-  "scout_issue": "OPE-1419",
-  "parent_issue": "OPE-1418",
-  "formalist_issue": "OPE-1424",
-  "director_issue": "OPE-1423",
-  "lean_artifact": "proofs/lean-project/ProofLab/NQueens.lean",
-  "pr": "https://github.com/Paul3435/open-math-lab/pull/174",
-  "scout_probes": [
-    "Independent Mathlib gap grep vs pinned v4.10.0 this run: ZERO nQueens / NQueens / eightQueens / isQueens; List / Fin / Nodup HIT as infra only; queen hit is Queen Mary University comment only",
-    "Negative control turan → Turan.lean exists L300",
-    "Already-in: catalan L109; numDerangements L62; Bertrand L211; frobeniusNumber_pair L52; HalesJewett L445; wilsons_lemma L38; exists_infinite_primes L82; Nat.factorial L29; pow_two L581; isSimpleGroup_five L289; IsKleinFour L51",
-    "Already-consumed: SimpsonParadox Level A (#171); A4KleinFour Level A (#172); Taxicab1729 Level A (#168); EulerBrick Level A (#169); LangfordPairing Level A (#160); GrayCode Level A (#163); OrthogonalLatinSquares Level A (#157)",
-    "JSON leftovers catalan/derangement/bertrand/frobenius-coin/vdW-w24 replaced not reaffirmed",
-    "Langford leftover-revivals / Gray leftover-revivals / 15-puzzle residual of A4 / krenn-gu / hou-zeng / sun-135 disclosed as different statements"
-  ]
+  "literature_risks": [
+    "Attribution: 'Gauss 1850' (used in the OPE-1419 dossier) is the 8×8 count correspondence, not the general-n existence theorem; cite Pauls 1874 for existence, Hoffman–Loessi–Moore 1969 / Bernhardsson 1991 for explicit constructions, Bell–Stevens 2009 as survey.",
+    "Scope creep: 'the n-queens problem' is routinely conflated with counting Q(n) (b) — an attack that drifts to Q(8)=92 or a closed form is off-target.",
+    "Novelty: nothing here is new; any wording implying a research result is a claim-policy violation. Default no claim."
+  ],
+  "literature_handles": [
+    "Bezzel 1848 (puzzle posed, 8×8); Nauck 1850 (92 solutions); Gauss–Schumacher letters 1850 (8×8 count)",
+    "Pauls 1874, Deutsche Schachzeitung — existence for all n ≥ 4",
+    "Ahrens 1910, Mathematische Unterhaltungen und Spiele — textbook; also Pólya 1918 toroidal",
+    "Hoffman, Loessi, Moore 1969, Math. Magazine 42(2):66–72 — explicit mod-6 construction",
+    "Bernhardsson 1991, SIGART Bull. 2(2):7 — one-page explicit construction",
+    "Bell & Stevens 2009, Discrete Math. 309(1):1–31 — survey",
+    "Gent, Jefferson, Nightingale 2017, JAIR 59:815–848 — completion NP-complete",
+    "Simkin 2021, arXiv:2107.13460 — asymptotics",
+    "OEIS A000170 (Q(n)), A002562 (fundamental), A051906 (toroidal)"
+  ],
+  "mathlib_gap_grep_2026_09_12_ope3": {
+    "pin": "proofs/lean-project/.lake/packages/mathlib @ a719ba5c31 (Lean v4.10.0); local grep only (OPE-25), no internet",
+    "commands": [
+      "rg -n -i 'nqueens|n_queens|eightqueens|eight_queens|isqueens|queens_problem|queensproblem|non.?attacking' Mathlib Archive Counterexamples",
+      "rg -n -i '\\bqueens?\\b' Mathlib Archive Counterexamples",
+      "rg -n 'theorem isTuranMaximal_iff_nonempty_iso_turanGraph' Mathlib  (negative control)"
+    ],
+    "hits": [
+      "named n-queens theorem: ZERO (exit 1)",
+      "broad 'queen': Mathlib/GroupTheory/PushoutI.lean:36 'from Queen Mary University' (comment only)",
+      "negative control: Mathlib/Combinatorics/SimpleGraph/Turan.lean:300 HIT (grep sound)"
+    ],
+    "infra_hits_use_do_not_reprove": [
+      "Function.Injective — Mathlib/Logic/Function/Defs.lean:101",
+      "injective_iff_surjective (Fintype) — Mathlib/Data/Fintype/Card.lean:567 (possible glue, not needed)",
+      "Nat.ModEq / modEq_iff_dvd — Mathlib/Data/Nat/ModEq.lean:78",
+      "tactics: decide, fin_cases, omega, interval_cases"
+    ],
+    "in_repo": "proofs/lean-project/ProofLab/NQueens.lean — Level A only (IsNQueens list encoding; queens_two_none / queens_three_none / queens_four / queens_four_alt; PR #174). Namesake explicitly residual there. Also referenced (as 'not this') in HexNoDraw / LightsOut / MutilatedChessboard / BrocardFactorialSquare headers.",
+    "verdict": "genuine ProofLab gap for the namesake; expected = known-classical (formalize-only)"
+  },
+  "prior_art_in_repo": {
+    "lean_level_a": "proofs/lean-project/ProofLab/NQueens.lean",
+    "pr": "https://github.com/Paul3435/open-math-lab/pull/174",
+    "tickets": ["OPE-1418", "OPE-1419", "OPE-1423", "OPE-1424"],
+    "reuse": "diagonal-inequality encoding; n=4 witness [1,3,0,2]; optional bridge only",
+    "honesty": "Cited as prior art and reusable encoding, NOT as a solution. The namesake was left as residual in #174."
+  },
+  "feasibility_shape": "Level A (DONE, #174). Level B (THIS SCOPE): namesake n_queens_exists_iff. Ladder B1 (n=2,3 none, decide) → B2 case 1 (n mod 6 ∉ {2,3}, even-then-odd staircase) → B2 case 2 (n mod 6 = 2) → B2 case 3 (n mod 6 = 3). Honest partial allowed if commented as residual, never sorry-ed. Level C optional: bridge to IsNQueens. No Q(n) counting, no toroidal, no completion.",
+  "estimated_token_budget": {
+    "formalist_level_b": "150k–300k (two waves: B1 + B2 case 1; then B2 cases 2–3)",
+    "adversarial_review": "30k",
+    "hard_cap": "400k; stop and log a dead-end map if B2 cases 2–3 exceed the cap",
+    "attack_lead": "not needed — formalize-only; the construction is transcribed, not discovered"
+  },
+  "skill_packs": ["combinatorics", "formalization"],
+  "claim_default": "no claim — classical theorem; formalization exercise only",
+  "scored_at": "2026-09-12",
+  "scout_issue": "OPE-3",
+  "parent_issue": "OPE-2",
+  "history": {
+    "ope1419_dossier": "2026-09-11 Scout OPE-1419 scored 86 for the small-board Level A prime; superseded by this fresh full-process dossier (scope now the namesake Level B).",
+    "ope1424_formalist": "Level A landed, PR #174, zero sorry.",
+    "ope2_closeout": "2026-09-12 Director close-out: formalized. OPE-4 stub (PR #4) → OPE-5 attack log status:informal (PR #5) → OPE-6 Lean proof zero sorry (PR #6) → OPE-7 Adversarial Reviewer APPROVE WITH RESIDUALS (PR #7) → OPE-2 integration + LOG.md erratum + claim packet (PR #8). No claim."
+  },
+  "closeout": {
+    "issue": "OPE-2",
+    "lean_file": "proofs/lean-project/ProofLab/NQueensTheorem.lean",
+    "theorems": ["n_queens_exists_iff", "queens_exists_of_four_le"],
+    "axioms": ["propext", "Classical.choice", "Quot.sound"],
+    "reviewer_issue": "OPE-7",
+    "reviewer_verdict": "APPROVE WITH RESIDUALS",
+    "claim": "none",
+    "claim_packet": "problems/n-queens/CLAIM_PACKET.md",
+    "definition_risks_disposition": {
+      "R1": "n=0 vacuous convention confirmed by Scout, Director, Reviewer; RHS n≠2∧n≠3",
+      "R2": "Reviewer negative controls: each NonAttacking clause load-bearing (weakened predicates accept the matching bad board)",
+      "R3": "discharged by Attack Lead 0-indexed transcription + Lean; a new ℕ-truncation slip in the typed f₂ got past the signed-int Python check and was caught by Lean — LOG.md erratum"
+    }
+  }
 }
