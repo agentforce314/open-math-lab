@@ -97,6 +97,7 @@ import ProofLab.EulerBrick
 import ProofLab.SimpsonParadox
 import ProofLab.A4KleinFour
 import ProofLab.NQueens
+import ProofLab.NQueensTheorem
 import ProofLab.BrocardFactorialSquare
 import ProofLab.MutilatedChessboard
 import ProofLab.HexNoDraw
