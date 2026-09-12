@@ -1,0 +1,799 @@
+% n-queens formalization report — Open Math Lab (mathforge), OPE-2.
+% Build: ./build.sh  (tectonic, XeTeX engine; fonts from the tectonic bundle)
+% Status: INTERNAL LAB REPORT. No external claim. Board (Paul) decides distribution.
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{texgyrepagella}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+\setmathfont{texgyrepagella-math.otf}
+\setmonofont{DejaVuSansMono.ttf}[Scale=MatchLowercase]
+
+\usepackage[a4paper,margin=27mm]{geometry}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyvrb}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\urlstyle{tt}
+\emergencystretch=1.5em
+
+\definecolor{codebg}{gray}{0.96}
+\fvset{fontsize=\small,frame=single,framesep=2mm,rulecolor=\color{gray},xleftmargin=1mm}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{convention}[theorem]{Convention}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\lean}[1]{\texttt{#1}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Fin}{\mathrm{Fin}\,}
+\newcommand{\NonAttacking}{\mathrm{NonAttacking}}
+\newcommand{\GoodEven}{\mathrm{GoodEven}}
+\newcommand{\Repo}{\texttt{agentforce314/open-math-lab}}
+
+\title{A Machine-Checked Proof of the \texorpdfstring{$n$}{n}-Queens Existence Theorem\\
+\large A process report from Open Math Lab (mathforge)}
+\author{Open Math Lab agent collective\thanks{Paperclip agents (Claude): Problem Scout, Formalist, Attack Lead, Adversarial Reviewer, Research Director (editor of this report). Human board: Paul. Repository: \url{https://github.com/agentforce314/open-math-lab}.}}
+\date{12 September 2026 --- internal lab report, revision 1}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report a zero-\lean{sorry} Lean~4 / Mathlib formalization of the classical
+$n$-queens existence theorem: a placement of $n$ mutually non-attacking queens on an
+$n\times n$ board exists if and only if $n\neq 2$ and $n\neq 3$
+(Pauls 1874; explicit constructions by Hoffman--Loessi--Moore 1969 and
+Bernhardsson 1991). The theorem is \emph{not new}; the contribution of this report is
+(i)~the machine-checked artifact \lean{ProofLab.NQueensTheorem.n\_queens\_exists\_iff},
+whose statement was frozen before any proof was attempted and whose axiom footprint is
+exactly $\{\lean{propext}, \lean{Classical.choice}, \lean{Quot.sound}\}$;
+(ii)~a 0-indexed transcription of Bernhardsson's construction in which every case
+reduces to a linear-arithmetic goal closed by \lean{omega};
+(iii)~an adversarial review with negative controls showing each clause of the
+formal definition is load-bearing; and
+(iv)~an account of the gate-by-gate process (five agent roles under a human board) that produced it in under one
+hour of wall-clock time, including one transcription bug that survived a
+brute-force check over $997$ boards and was caught only by the type checker.
+The lab makes \textbf{no external claim}. Residual risks are listed explicitly.
+\end{abstract}
+
+\section*{Status and claim posture}
+\addcontentsline{toc}{section}{Status and claim posture}
+This is an internal report of Open Math Lab, produced under the lab's claim policy
+(\path{docs/CLAIM_POLICY.md}): the default position is \emph{no claim}, and only the
+human board may authorize external communication. Nothing here is a research result.
+Every mathematical statement below has one of two labels: \textbf{Lean-checked}
+(a named declaration in Appendix~\ref{app:lean}, verified by the kernel) or
+\textbf{informal} (prose, evidence, or process narrative). The full process record,
+including dead ends and an erratum, is preserved in the repository and summarized in
+Section~\ref{sec:process}.
+
+\tableofcontents
+
+\section{Introduction}
+
+``The $n$-queens problem'' names at least five different mathematical questions.
+Table~\ref{tab:readings} lists the five that the lab's Problem Scout identified and
+scored on the lab's feasibility rubric before any work was assigned. Exactly one of them,
+the \emph{existence} question, is both settled in the literature and finitely encodable in
+a way that a proof assistant can check in a single sprint. That one was funded; the others
+are recorded as out of scope and remain untouched.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{7.2cm}r>{\raggedright\arraybackslash}p{4.2cm}@{}}
+\toprule
+& Reading & Score & Disposition \\
+\midrule
+(a) & Existence: a placement exists $\iff n\notin\{2,3\}$ & 88 & \textbf{target}; known-classical, formalize-only \\
+(b) & Counting $Q(n)$ (OEIS A000170; $Q(8)=92$) & 54 & out of scope (no closed form known) \\
+(c) & Asymptotics $Q(n)=((1\pm o(1))\,n e^{-\alpha})^n$ (Simkin 2021) & 28 & refused \\
+(d) & Completion is NP-complete (Gent--Jefferson--Nightingale 2017) & 36 & refused \\
+(e) & Toroidal queens exist $\iff \gcd(n,6)=1$ (Pólya 1918) & 80 & different theorem; out of scope \\
+\bottomrule
+\end{tabular}
+\caption{Disambiguation by the Problem Scout (issue OPE-3). Scores are on the lab rubric
+(five axes $\times$ 0--20). Only (a) was funded.}
+\label{tab:readings}
+\end{table}
+
+The board's instruction was to ``solve the $n$-queens problem end to end using the whole
+process, assuming the problem is new to you.'' We read ``new to you'' as an instruction
+about \emph{process}, not about pretending: the repository already contained a small
+Level~A artifact for boards $n\le 4$ (Section~\ref{sec:prior}), which every ticket cites as
+prior art. What was genuinely new for the lab was the namesake theorem itself, which had
+been explicitly left unproved.
+
+\paragraph{What this report is.}
+A formalization report and a process report. Section~\ref{sec:statement} fixes the formal
+statement. Section~\ref{sec:construction} gives the mathematics of the construction in the
+0-indexed form that was actually formalized, with each lemma tagged by its Lean name.
+Section~\ref{sec:formalization} describes the Lean development and its verification.
+Section~\ref{sec:review} reproduces the adversarial review, including the negative
+controls. Section~\ref{sec:process} records the pipeline, gates, timeline, and budgets.
+Section~\ref{sec:residuals} lists what is not claimed and what remains at risk.
+Section~\ref{sec:lessons} draws process lessons. Appendix~\ref{app:lean} is the complete
+Lean source; Appendices~\ref{app:transcripts}--\ref{app:timeline} are verification
+transcripts and the ticket timeline.
+
+\paragraph{What this report is not.}
+It is not a claim of novelty, priority, or difficulty. It does not address readings
+(b)--(e). It does not assert that the formal predicate $\NonAttacking$ is ``the''
+definition of the problem; that identification is a human judgement, made independently
+three times (Scout, Director, Reviewer) and exercised with counterexamples, but not
+certified by the machine.
+
+\section{Historical and formal context}
+\label{sec:context}
+
+\paragraph{History.}
+Bezzel posed the eight-queens puzzle in 1848 and Nauck reported the $92$ solutions in
+1850; the Gauss--Schumacher correspondence of that year concerns the $8\times 8$ count
+only, not the general theorem. Pauls (1874) first proved existence for all $n\ge 4$.
+Ahrens (1910) gave a textbook treatment. Hoffman, Loessi and Moore (1969) and
+Bernhardsson (1991) gave explicit closed-form constructions split on $n \bmod 6$; the
+latter's one-page note is the source transcribed here. Bell and Stevens (2009) survey the
+field and confirm that (a) is settled, (b) is open-ended, and (e) is Pólya's theorem.
+
+\paragraph{Mathlib.}
+At the pinned Mathlib commit (\texttt{a719ba5c31}, Lean \texttt{v4.10.0}) a grep of
+\texttt{Mathlib}, \texttt{Archive} and \texttt{Counterexamples} for the pattern
+\begin{center}\small\texttt{nqueens|n\_queens|eightqueens|non.?attacking|queens?}\end{center}
+returns no mathematical hit (the only match is a ``Queen Mary University'' comment). A negative control
+(\lean{isTuranMaximal\_iff\_nonempty\_iso\_turanGraph}) fires, so the grep is sound.
+This screen is local to the pin; it is not a survey of the wider Lean ecosystem.
+
+\paragraph{Prior art in this repository.}
+\label{sec:prior}
+\texttt{ProofLab/NQueens.lean} (upstream PR~\#174) defines a \emph{list} encoding
+\lean{IsNQueens : List (Fin n) → Prop} (length $n$, \lean{Nodup}, both diagonal families)
+and proves \lean{queens\_two\_none}, \lean{queens\_three\_none}, and the two $n=4$
+witnesses $[1,3,0,2]$ and $[2,0,3,1]$. The namesake theorem was left as a residual there.
+The present work uses a \emph{function} encoding in a new file and re-proves the $n=2,3$
+cases on that encoding, so no bridge lemma between the two encodings is needed---and none
+was proved (Residual~1 in Section~\ref{sec:residuals}).
+
+\section{The statement}
+\label{sec:statement}
+
+Throughout, boards are $0$-indexed: rows and columns are $\{0,\dots,n-1\}$, realised in
+Lean as $\Fin\,n$. A \emph{placement} is a function $q:\Fin n\to\Fin n$; row $i$ holds
+one queen, in column $q(i)$. One queen per row is thus built into the encoding.
+
+\begin{definition}[\lean{NonAttacking}, Lean-checked definition]
+\label{def:nonattacking}
+A placement $q$ is \emph{non-attacking} if
+\begin{enumerate}[nosep,label=(\roman*)]
+\item (columns) $q$ is injective;
+\item (anti-diagonals) for all $i\neq j$, $i+q(i)\neq j+q(j)$;
+\item (main diagonals) for all $i\neq j$, $i+q(j)\neq j+q(i)$.
+\end{enumerate}
+All sums are in $\N$ after coercion from $\Fin n$; they are \emph{not} taken modulo $n$.
+\end{definition}
+
+Clause (iii) is the subtraction-free form of $i-q(i)\neq j-q(j)$: over $\mathbb{Z}$ the
+two are the same inequality rearranged, and since every term is a natural number no
+coercion subtlety arises. Writing it this way keeps the whole development inside
+\lean{omega}'s fragment (linear arithmetic over $\N$ with literal coefficients).
+
+\begin{convention}[$n=0$]
+\label{conv:zero}
+$\Fin 0\to\Fin 0$ has exactly one function and Definition~\ref{def:nonattacking} is
+vacuous on it. The empty board therefore \emph{has} a placement. Consequently the theorem
+is stated with right-hand side $n\neq 2\wedge n\neq 3$, which is total in $n$, rather
+than the textbook ``$n=1$ or $n\ge 4$''. For $n\ge 1$ the two are the same theorem. This
+convention was fixed by the Scout, confirmed by the Director, and re-derived independently
+by the Reviewer.
+\end{convention}
+
+\begin{theorem}[\lean{n\_queens\_exists\_iff}, Lean-checked]
+\label{thm:main}
+For every $n\in\N$,
+\[
+\bigl(\exists\, q:\Fin n\to\Fin n,\ \NonAttacking(q)\bigr)\iff\bigl(n\neq 2\wedge n\neq 3\bigr).
+\]
+\end{theorem}
+
+\begin{theorem}[\lean{queens\_exists\_of\_four\_le}, Lean-checked]
+\label{thm:four}
+For every $n\ge 4$ there is a non-attacking placement $q:\Fin n\to\Fin n$.
+\end{theorem}
+
+The Lean text of the definition and both theorem headers is reproduced verbatim below. It
+was \emph{frozen} at the statement-pin gate (issue OPE-4) before any proof work began, and
+was diffed byte-for-byte against the frozen text at the proof gate and again at review.
+
+\begin{Verbatim}
+def NonAttacking {n : ℕ} (q : Fin n → Fin n) : Prop :=
+  Function.Injective q ∧
+  ∀ i j : Fin n, i ≠ j →
+    (i : ℕ) + (q i : ℕ) ≠ (j : ℕ) + (q j : ℕ) ∧
+    (i : ℕ) + (q j : ℕ) ≠ (j : ℕ) + (q i : ℕ)
+
+theorem queens_exists_of_four_le (n : ℕ) (hn : 4 ≤ n) :
+    ∃ q : Fin n → Fin n, NonAttacking q
+
+theorem n_queens_exists_iff (n : ℕ) :
+    (∃ q : Fin n → Fin n, NonAttacking q) ↔ (n ≠ 2 ∧ n ≠ 3)
+\end{Verbatim}
+
+Theorem~\ref{thm:four} was split out at the pin gate as an optional target because it
+isolates the only hard direction; the $n\le 3$ cases are finite.
+
+\section{The construction}
+\label{sec:construction}
+
+This section is the mathematics as it was formalized. It follows the Attack Lead's log
+(issue OPE-5), with the two corrections recorded in its erratum (Section~\ref{sec:erratum})
+already applied. Every lemma is tagged with the Lean declaration that checks it. Throughout,
+$h := \lfloor n/2\rfloor$; for even $n$, $n=2h$.
+
+\subsection{Why three formulas rather than six residue classes}
+
+Bernhardsson's construction is usually presented as a case split on $n \bmod 6$. The
+Attack Lead chose a coarser partition: two closed formulas for even boards and one generic
+\emph{corner extension} that handles all odd boards uniformly. The reason is tactical
+rather than mathematical: every odd class then shares a single lemma whose only hypothesis
+is that the even board has no queen on its main diagonal, and the whole proof stays in one
+tactic flavour (\lean{split\_ifs <;> omega}). No modular arithmetic library (\lean{ZMod},
+\lean{Nat.ModEq}) is needed anywhere. The alternative ``knight'' formula $r\mapsto 2r \bmod n$
+for $\gcd(n,6)=1$ was machine-checked but deliberately not formalized, because it would
+have required a second proof technique without removing any case from the plan.
+
+\subsection{The even-board interface}
+
+\begin{definition}[\lean{GoodEven}, Lean-checked definition]
+For $n\in\N$ and $f:\N\to\N$, $\GoodEven(n,f)$ holds if, for all $r,s<n$:
+\begin{enumerate}[nosep,label=(\alph*)]
+\item $f(r)<n$;
+\item $f(r)=f(s)\Rightarrow r=s$;
+\item $r\neq s\Rightarrow r+f(r)\neq s+f(s)$;
+\item $r\neq s\Rightarrow r+f(s)\neq s+f(r)$;
+\item $f(r)\neq r$ \quad (\emph{no fixed point}: no queen on the main diagonal through the origin).
+\end{enumerate}
+\end{definition}
+
+Clauses (a)--(d) say that $f$ restricted to $\{0,\dots,n-1\}$ is a non-attacking placement
+in the sense of Definition~\ref{def:nonattacking}; clause (e) is the side condition the
+corner extension needs.
+
+\begin{lemma}[\lean{nonAttacking\_of\_nat}, Lean-checked; the only $\Fin$ lemma]
+\label{lem:transfer}
+If $f:\N\to\N$ satisfies (a)--(d) on $\{0,\dots,n-1\}$ then
+$i\mapsto \langle f(i),\,\text{(a)}\rangle$ is a $\NonAttacking$ placement $\Fin n\to\Fin n$.
+\end{lemma}
+
+Everything else in the development is a statement about $\N\to\N$; Lemma~\ref{lem:transfer}
+is the single crossing into dependent types.
+
+\subsection{E1: \texorpdfstring{$n$ even, $n \equiv 0,4 \ (\mathrm{mod}\ 6)$}{n even, n = 0,4 (mod 6)}}
+
+\begin{definition}[\lean{f₁}]
+$f_1(r) = 2r+1$ if $r<h$, and $f_1(r)=2r-n$ otherwise.
+\end{definition}
+
+Odd columns $1,3,\dots,n-1$ fill the top half, even columns $0,2,\dots,n-2$ the bottom half.
+For $n=4$ this is $[1,3,0,2]$, the Level~A witness.
+
+\begin{lemma}[\lean{e1\_lt}, \lean{e1\_inj}, \lean{e1\_main},
+\lean{e1\_no\_fix}; Lean-checked]
+For even $n$, $f_1$ satisfies (a), (b), (d), (e).
+\end{lemma}
+\begin{proof}[Informal argument]
+(a) $r<h\Rightarrow 2r+1\le n-1$; $r\ge h\Rightarrow 2r-n\le n-2$.
+(b) Within a half, $2r+1=2s+1$ or $2r-n=2s-n$ forces $r=s$; across halves $2r+1=2s-n$
+equates an odd and an even number.
+(d) In $\mathbb{Z}$, $r-f_1(r)$ is $-r-1$ on the top half and $n-r$ on the bottom; within a
+half this is injective, and across halves $-r-1=n-s$ gives $s-r=n+1>s$, impossible.
+(e) $2r+1=r$ is impossible in $\N$; $2r-n=r$ gives $r=n$, contradicting $r<n$.
+\end{proof}
+
+\begin{lemma}[\lean{e1\_anti}, Lean-checked]
+\label{lem:e1anti}
+If $n\bmod 6\in\{0,4\}$ then $f_1$ satisfies (c).
+\end{lemma}
+\begin{proof}[Informal argument]
+Within a half, $3r+1=3s+1$ or $3r-n=3s-n$ forces $r=s$. Across halves ($r<h\le s$),
+$3r+1=3s-n$ gives $3(s-r)=n+1$, i.e.\ $n\equiv 2\pmod 3$, excluded by hypothesis.
+\end{proof}
+
+Lemma~\ref{lem:e1anti} is the only place the residue class is used, and the restriction is
+sharp: for $n=8$, rows $1$ and $4$ of $f_1$ share anti-diagonal $4$.
+
+\begin{proposition}[\lean{goodEven\_f₁}, Lean-checked]
+If $n\bmod 6\in\{0,4\}$ then $\GoodEven(n,f_1)$.
+\end{proposition}
+
+\subsection{E2: \texorpdfstring{$n$ even, $n \equiv 2 \ (\mathrm{mod}\ 6)$}{n even, n = 2 (mod 6)}}
+
+Here $h\bmod 3=1$, and for $n\ge 8$, $h\ge 4$. Bernhardsson's second formula contains a
+``$x \bmod n$'' wrap; the Attack Lead resolved the wrap into explicit branches, since
+$x\bmod n$ with variable $n$ lies outside \lean{omega}'s fragment.
+
+\begin{definition}[\lean{f₂}]
+\[
+f_2(r)=
+\begin{cases}
+2r+h-1 & r<h,\ 2r\le h \quad\text{(P1)}\\
+2r-h-1 & r<h,\ 2r> h \quad\text{(P2)}\\
+2r+2-h & r\ge h,\ 2r<3h-2 \quad\text{(P3)}\\
+2r+2-3h & r\ge h,\ 2r\ge 3h-2 \quad\text{(P4)}
+\end{cases}
+\]
+\end{definition}
+
+For $n=8$: $[3,5,7,1,6,0,2,4]$; for $n=14$:
+$[6,8,10,12,0,2,4,9,11,13,1,3,5,7]$. The second half is the $180^\circ$ rotation of the
+first, $f_2(n-1-r)=n-1-f_2(r)$, which is how the formula was derived but is not used by the
+proof. Table~\ref{tab:e2} lists the linear forms that \lean{omega} sees in each piece.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+piece & $f_2(r)$ & $r+f_2(r)$ (anti) & $r-f_2(r)$ (main, in $\mathbb Z$) & parity of $f_2(r)$ \\
+\midrule
+P1 & $2r+h-1$ & $3r+h-1$ & $-r-h+1$ & $h-1$ \\
+P2 & $2r-h-1$ & $3r-h-1$ & $-r+h+1$ & $h-1$ \\
+P3 & $2r-h+2$ & $3r-h+2$ & $-r+h-2$ & $h$ \\
+P4 & $2r-3h+2$ & $3r-3h+2$ & $-r+3h-2$ & $h$ \\
+\bottomrule
+\end{tabular}
+\caption{Piecewise-linear data for $f_2$. Values are as integers; the Lean definition
+orders the operations so that no piece truncates in $\N$ on its own range
+(Section~\ref{sec:erratum}).}
+\label{tab:e2}
+\end{table}
+
+\begin{lemma}[\lean{e2\_lt}, \lean{e2\_inj}, \lean{e2\_anti}; Lean-checked]
+If $n\bmod 6=2$ then $f_2$ satisfies (a), (b), (c).
+\end{lemma}
+\begin{proof}[Informal argument]
+(a) Piece bounds: P1 $\le 2h-1=n-1$; P2 $\le h-3$; P3 $<n$; P4 $\le h$.
+(b) Within a piece $2r+c=2s+c$; P1/P2 and P3/P4 cross-cases give $s-r=h$ against the
+piece ranges; top-vs-bottom cross-cases have opposite parity (last column of
+Table~\ref{tab:e2}).
+(c) Within a piece $3r+c=3s+c$. Cross-piece constant differences are $2h$, $2h-3$,
+$4h-3$, $3$, $2h-3$, $2h$; each $3(s-r)=\pm\text{const}$ forces $3\mid 2h$ or
+$3\mid 4h$, impossible as $h\equiv 1\pmod 3$, except P2--P3 where $3(s-r)=-3$ gives
+$s=r-1<h$, contradicting $s\ge h$.
+\end{proof}
+
+\begin{lemma}[\lean{e2\_main}, Lean-checked; needs $8\le n$]
+If $n\bmod 6=2$ and $n\ge 8$ then $f_2$ satisfies (d).
+\end{lemma}
+\begin{proof}[Informal argument]
+Within a piece, $-r+c=-s+c$. P1P2 and P3P4: $s-r=2h\ge n$. P1P4: $s-r=4h-3\ge n$.
+P2P3: $r-s=3$ with $r<h\le s$. P1P3: $s-r=2h-3$ with $s<(3h-2)/2$ forces $h<4$.
+P2P4: $s-r=2h-3$ with $r>h/2$, $s\le 2h-1$ forces $h\le 3$. Hence $h\ge 4$ suffices.
+\end{proof}
+
+\begin{lemma}[\lean{e2\_no\_fix}, Lean-checked; needs $4\le n$]
+\label{lem:e2nofix}
+If $n\bmod 6=2$ and $n\ge 4$ then $f_2$ satisfies (e).
+\end{lemma}
+\begin{proof}[Informal argument]
+A fixed point would be P1 $r=1-h$; P2 $r=h+1>h$; P3 $r=h-2<h$; P4 $r=3h-2\ge 2h$
+(using $h\ge 2$). Each contradicts its piece's range.
+\end{proof}
+
+The hypothesis $4\le n$ in Lemma~\ref{lem:e2nofix} is genuinely needed: at $n=2$,
+$f_2(0)=0$ and $f_2(1)=1$. It was missing from the attack log's typed lemma
+(Section~\ref{sec:erratum}); in the assembly it is discharged from $8\le n$.
+
+\begin{proposition}[\lean{goodEven\_f₂}, \lean{goodEven\_exists}; Lean-checked]
+If $n\bmod 6=2$ and $n\ge 8$ then $\GoodEven(n,f_2)$. Consequently every even $n\ge 4$
+admits some $f$ with $\GoodEven(n,f)$.
+\end{proposition}
+
+(For even $n\ge 4$, $n\bmod 6\in\{0,2,4\}$; the class $2$ case has $n\ge 8$ automatically.)
+
+\subsection{Odd boards: corner extension}
+
+\begin{definition}[\lean{corner}]
+For $m\in\N$ and $g:\N\to\N$, $\mathrm{corner}(m,g)(r)=g(r)$ if $r<m$, and $=m$ otherwise.
+\end{definition}
+
+Board $m+1$ is board $m$ with one more queen in the corner $(m,m)$.
+
+\begin{lemma}[\lean{corner\_lt}, \lean{corner\_inj}, \lean{corner\_anti}, \lean{corner\_main}; all Lean-checked]
+\label{lem:corner}
+If $\GoodEven(m,g)$ then $\mathrm{corner}(m,g)$ satisfies (a)--(d) on the set
+$\{0,\dots,m\}$.
+\end{lemma}
+\begin{proof}[Informal argument]
+Both rows below $m$: inherited from $g$. One row equal to $m$:
+(a) $m<m+1$; (b) $g(r)=m$ contradicts $g(r)<m$; (c) $r+g(r)\le 2m-2<2m=m+m$;
+(d) $r+m\neq m+g(r)\iff g(r)\neq r$, which is exactly clause (e) of $\GoodEven$.
+\end{proof}
+
+The last line is the whole point of clause (e): without it the corner queen would lie on
+the main diagonal through some $g$-queen. This is also why a toroidal (modular) solution
+cannot be corner-extended (Section~\ref{sec:deadends}).
+
+\subsection{Assembly}
+
+\begin{proof}[Proof of Theorem~\ref{thm:four} (\lean{queens\_exists\_of\_four\_le})]
+Write $n=2k$ or $n=2k+1$. If even, take the $f$ from \lean{goodEven\_exists} and apply
+Lemma~\ref{lem:transfer}. If odd, $2k\ge 4$; take $g$ with $\GoodEven(2k,g)$, form
+$\mathrm{corner}(2k,g)$, apply Lemma~\ref{lem:corner} and then Lemma~\ref{lem:transfer}.
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:main} (\lean{n\_queens\_exists\_iff})]
+($\Rightarrow$) $\Fin 2\to\Fin 2$ has $4$ functions and $\Fin 3\to\Fin 3$ has $27$; after
+unfolding $\NonAttacking$, kernel \lean{decide} refutes each
+(\lean{queens\_two\_none'}, \lean{queens\_three\_none'}). ($\Leftarrow$) If $n<4$ then
+$n\in\{0,1\}$ and the identity is a placement (by \lean{decide}); otherwise
+Theorem~\ref{thm:four}.
+\end{proof}
+
+\subsection{Dead ends (informal)}
+\label{sec:deadends}
+
+The attack log records three routes that were tried and rejected, with the obstruction in
+each case:
+\begin{enumerate}[nosep]
+\item \emph{$1$-indexed ``list surgery''} for $n\bmod 6\in\{2,3\}$ (``swap $1\leftrightarrow 3$,
+move $5$ to the end''). Transcribed to $0$-indexed form it is a five-piece function with
+three single-point pieces, and the $n\bmod 6=3$ list is \emph{not} a corner extension of the
+$n\bmod 6=2$ list (for $n=9$ the last row holds column $2$, not $8$). Rejected for
+Bernhardsson's closed formula, whose companion \emph{is} the corner extension. Obstruction:
+more cases and no reuse, not a mathematical failure.
+\item \emph{Corner-extending a toroidal solution.} Any modular solution
+$r\mapsto (ar+b)\bmod m$ has a queen on every wrapped diagonal, in particular on the actual
+main diagonal $r=q(r)$, so clause (e) fails and the corner queen is attacked. Exact
+obstruction.
+\item \emph{A single $\bmod n$ formula for even $n$.} $(2r+c)\bmod n$ is never injective
+for even $n$ ($\gcd(2,n)=2$), so no one-line modular argument exists for even boards; the
+$r<h$ split is unavoidable.
+\end{enumerate}
+
+\section{The formalization}
+\label{sec:formalization}
+
+\subsection{Architecture}
+
+The development is one file, \path{proofs/lean-project/ProofLab/NQueensTheorem.lean}
+(272 lines, Appendix~\ref{app:lean}), in namespace \lean{ProofLab.NQueensTheorem}. It
+contains five definitions ($\NonAttacking$, $\GoodEven$, $f_1$, $f_2$, $\mathrm{corner}$)
+and twenty-two theorems. Its shape follows the attack plan exactly:
+\begin{itemize}[nosep]
+\item one transfer lemma from $\N\to\N$ into $\Fin n\to\Fin n$ (Lemma~\ref{lem:transfer});
+\item an interface record $\GoodEven$ so that E1, E2 and the corner step compose without
+knowing each other's formulas;
+\item every arithmetic lemma proved by the same three-token script
+\lean{simp only [f]; split\_ifs <;> omega}, one line each;
+\item the two finite cases by kernel \lean{decide} on the function space, after
+\lean{unfold NonAttacking} (plain \lean{decide} does not see through the \lean{def});
+\item three \lean{example}s as sanity checks: the Level~A witness satisfies the predicate,
+$f_1(4)=[1,3,0,2]$, $f_2(8)=[3,5,7,1,6,0,2,4]$.
+\end{itemize}
+The \lean{unusedVariables} linter is disabled for the arithmetic section because
+\lean{omega} consumes the bound hypotheses $r<n$, $s<n$ from context without a syntactic
+reference; the Formalist checked with \lean{clear} that they are load-bearing (e.g.\
+\lean{e1\_main} fails at $n=4$, $r=0$, $s=5$ without $s<n$).
+
+\subsection{Verification}
+\label{sec:verification}
+
+The proof was built, from a deleted module cache, by three parties on the same machine
+(Lean 4.10.0, arm64 macOS; Mathlib \texttt{a719ba5c31}): the Director at the proof gate,
+the Reviewer during review, and the Director again on the integrated close-out branch.
+Each time:
+\begin{Verbatim}
+✔ [2240/2240] Built ProofLab.NQueensTheorem
+Build completed successfully.
+\end{Verbatim}
+with no \lean{sorry} warning, and
+\begin{Verbatim}
+'ProofLab.NQueensTheorem.n_queens_exists_iff' depends on axioms:
+    [propext, Classical.choice, Quot.sound]
+'ProofLab.NQueensTheorem.queens_exists_of_four_le' depends on axioms:
+    [propext, Quot.sound]
+\end{Verbatim}
+A grep of the file for the pattern
+\begin{center}\small\texttt{sorry|admit|axiom|native\_decide|implemented\_by|extern|unsafe|partial}\end{center}
+returns only the expected \lean{decide} calls. \lean{Classical.choice} enters through
+Mathlib's \lean{Fintype} decidability instances used by \lean{decide} on the finite
+function spaces; \lean{queens\_exists\_of\_four\_le} does not need it.
+
+\subsection{Two deviations from the attack log, and an erratum}
+\label{sec:erratum}
+
+The Formalist reported two places where the landed Lean differs from the Attack Lead's
+\emph{typed} lemma list; the Reviewer confirmed both independently.
+
+\paragraph{(a) $\N$-truncation in the typed $f_2$.}
+The log typed pieces P3/P4 as \lean{2 * r - n / 2 + 2} and \lean{2 * r - 3 * (n / 2) + 2}.
+In $\N$ these parse as $(2r-3h)+2$ and truncate whenever $2r\in\{3h-2,3h-1\}$: for
+$n=8,r=5$ the typed form gives $2$ instead of $0$; for $n=14,r=10$ it gives $2$ instead of
+$1$. The Reviewer's own script found $166$ mismatched rows over $8\le n\le 1000$,
+$n\equiv 2\pmod 6$---exactly one row per board---and the typed form would have broken
+injectivity (at $n=8$, rows $5$ and $6$ would collide). The Attack Lead's Python check used
+signed integers and so never exercised the $\N$ form. Lean's $f_2$ is written
+\lean{2 * r + 2 - n / 2} and \lean{2 * r + 2 - 3 * (n / 2)}, which agree with the
+signed formula on every branch where they are evaluated. The mathematics in the log and the
+brute-force evidence were correct; only the $\N$ transcription was wrong. The log now
+carries an erratum header and the corrected forms.
+
+\paragraph{(b) A missing hypothesis.}
+The typed \lean{e2\_no\_fix} had no size hypothesis and is false at $n=2$; the log's
+justification ``(as $h\ge 2$)'' was unsupported. Lean adds $4\le n$, discharged by
+\lean{omega} from the assembly's $8\le n$. The Reviewer tabulated every landed declaration
+against the log (Table~\ref{tab:hypdiff}): this is the only hypothesis delta in the file,
+and nothing was weakened.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+declaration(s) & hypotheses in log & delta in Lean \\
+\midrule
+\lean{nonAttacking\_of\_nat} & \lean{hlt hinj hanti hmain} & none \\
+\lean{e1\_lt}, \lean{e1\_inj}, \lean{e1\_main}, \lean{e1\_no\_fix} & $n\bmod 2=0$ & none \\
+\lean{e1\_anti}, \lean{goodEven\_f₁} & $n\bmod 6\in\{0,4\}$ & none \\
+\lean{e2\_lt}, \lean{e2\_inj}, \lean{e2\_anti} & $n\bmod 6=2$ & none \\
+\lean{e2\_main}, \lean{goodEven\_f₂} & $n\bmod 6=2$, $8\le n$ & none \\
+\lean{e2\_no\_fix} & $n\bmod 6=2$ & \textbf{$+\,4\le n$} (needed) \\
+\lean{goodEven\_exists} & $4\le n$, $n\bmod 2=0$ & none \\
+\lean{corner\_*} & sketched & made concrete; none \\
+\lean{queens\_exists\_of\_four\_le} & $4\le n$ (frozen) & none \\
+\bottomrule
+\end{tabular}
+\caption{Hypothesis diff, attack log versus landed Lean (from the adversarial review).}
+\label{tab:hypdiff}
+\end{table}
+
+\section{Adversarial review}
+\label{sec:review}
+
+The lab's rule is that no mathematical claim is closed without \emph{both} a green Lean
+build \emph{and} written approval from an Adversarial Reviewer with veto power and a
+non-empty residual-risk list. The Reviewer (issue OPE-7) was given the artifact pinned to a
+commit and a binding checklist; the review file and its scratch Lean file are in the
+repository (\path{attacks/n-queens-20260912-180329/ADVERSARIAL_REVIEW.md},
+\path{review_checks.lean}). Verdict: \textbf{approve with residuals}.
+
+\subsection{Statement fidelity}
+
+The Reviewer read Definition~\ref{def:nonattacking} cold and matched each clause to the
+chess rule (rows = domain, columns = codomain, injectivity = distinct columns, $i+q(i)$ =
+anti-diagonal index, $i+q(j)=j+q(i)$ = shared main diagonal, sums in $\N$ not
+$\Fin n$). Two properties were then established by kernel \lean{decide}:
+\begin{itemize}[nosep]
+\item \emph{Not vacuous:} the predicate is unsatisfiable at $n=2,3$.
+\item \emph{Not over-strong:} concrete boards for $n=4,5,6,8,14$ are accepted, including
+$[1,3,0,2]$, which would fail twice if the sums were taken modulo $4$.
+\end{itemize}
+
+\subsection{Negative controls}
+
+To show that each clause is load-bearing, the Reviewer enumerated all $256$ functions
+$\Fin 4\to\Fin 4$ (informally, in Python) to select boards that violate \emph{exactly one}
+clause, then checked in Lean that $\NonAttacking$ rejects each, and that the predicate with
+that one clause removed accepts it (Table~\ref{tab:controls}). The enumeration also confirms
+that exactly two of the $256$ functions are accepted, the two classical $n=4$ solutions.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+board & violates only & $\NonAttacking$ & weakened predicate accepts \\
+\midrule
+$[0,1,2,3]$ & main diagonal & rejected & \lean{NoMain} \\
+$[3,2,1,0]$ & anti-diagonal & rejected & --- \\
+$[1,3,2,0]$ & anti-diagonal & rejected & \lean{NoAnti} \\
+$[0,0,0,0]$ & injectivity & rejected & \lean{NoInj} \\
+$[1,1,0,2]$ & injectivity \emph{and} anti-diagonal & rejected & (not single-clause; replaced) \\
+\bottomrule
+\end{tabular}
+\caption{Negative controls, all by kernel \lean{decide} (\texttt{review\_checks.lean}).
+Any control accepted by $\NonAttacking$ would have been an automatic reject.}
+\label{tab:controls}
+\end{table}
+
+\subsection{Machine-trust boundary}
+
+``Lean checked it'' means: the Lean 4.10.0 kernel accepted a term of type
+\[\forall n,\ (\exists q,\ \NonAttacking\,q)\leftrightarrow(n\neq 2\wedge n\neq 3)\]
+from the three standard axioms plus the pinned Mathlib's definitions. This certifies that the formal
+proposition follows from those axioms, modulo trusting the kernel, the \lean{elan}-installed
+toolchain binary, the Mathlib \texttt{.olean} cache on one machine, and the \lean{lake}
+build graph. It does \emph{not} certify that $\NonAttacking$ is the right predicate---that
+is the human judgement documented above---nor anything about readings (b)--(e), nor any
+link to the Level~A list encoding. No \lean{native\_decide} or \lean{ofReduceBool}
+shortcut was used anywhere.
+
+\section{Process}
+\label{sec:process}
+
+\subsection{Pipeline and gates}
+
+The lab runs as five Paperclip agent roles under a human board. For a board-named problem
+the Scout shortlist gate is satisfied by the board, but every other gate still fires. Each
+specialist was woken \emph{one at a time}; the Director re-verified the artifact at each gate
+before releasing the next ticket, and the Director's own checks were logged on the parent
+issue so the Reviewer could see what was and was not yet independent.
+
+\begin{enumerate}[nosep]
+\item \textbf{Board} (OPE-2): names the problem; asks for the whole process; approves
+user-local tooling.
+\item \textbf{Director}: installs Lean 4.10.0 via \lean{elan} (one macOS-26 linker
+workaround, documented); frames the readings; opens the child chain; sets kill criteria.
+\item \textbf{Problem Scout} (OPE-3): disambiguation, rubric score, literature handles,
+Mathlib screen, Level~B statement pin, top three definition risks, budget. Does not solve.
+\item \textbf{Formalist, statement pin} (OPE-4): the frozen text compiles with a single
+\lean{sorry}; \lean{\#print axioms} shows \lean{sorryAx}, as it must for a stub.
+\item \textbf{Attack Lead} (OPE-5): 0-indexed construction, informal proofs shaped for
+\lean{omega}, brute-force evidence to $n=1000$, Lean-shaped lemma list, dead-end map.
+Labelled \emph{status: informal}.
+\item \textbf{Formalist, proof} (OPE-6): closes both theorems in one wave (cap: two), reports
+the two deviations.
+\item \textbf{Adversarial Reviewer} (OPE-7): fresh rebuild, axioms, fidelity, negative
+controls, hypothesis diff, scope sweep, residuals. Veto power.
+\item \textbf{Director close-out} (OPE-2): integrates branches, records the erratum, moves
+the ledger and catalog to \emph{formalized}, prepares the claim packet
+(\texttt{mathforge claim prepare}) with recommendation \emph{no claim}.
+\end{enumerate}
+
+\subsection{Timeline and budget}
+
+All work took place on 12 September 2026. From the board's comment (17:37 UTC) to the
+close-out disposition (18:34 UTC) is 57 minutes of wall-clock time across eight
+heartbeats; the per-ticket commit times are in Appendix~\ref{app:timeline}. Token budgets
+were set per ticket (Scout and stub small; Attack Lead cap 60k, reported $\approx$45k used;
+Formalist proof wave 1 $\approx$120k of a two-wave cap; Reviewer $\approx$80k); the Scout's
+overall estimate of $\approx$300k was accurate to within a few percent. The Director's kill
+criterion (stop if more than one of the four proof blocks remained open after wave 2) was
+never triggered.
+
+Two facts keep this timeline in proportion. The theorem is classical and its construction
+is a one-page note in the literature; and the repository already had the Lean toolchain
+configuration, a Mathlib cache, a claim policy, a review checklist, and a role definition
+for every participant. The hour measures the \emph{process}, not the mathematics.
+
+\subsection{Artifacts}
+
+All artifacts are on the fork \Repo, branch \texttt{ope/2-nqueens-closeout}
+(pull request \#8, which integrates \#3, \#5, \#6, \#7):
+\begin{itemize}[nosep]
+\item \texttt{catalog/problems/n-queens/STATEMENT.md}, \texttt{DOSSIER.json} --- Scout dossier and pin;
+\item \path{attacks/n-queens-20260912-180329/} --- attack log (with erratum), strategies,
+\path{verify_construction.py} and its output, the adversarial review, \path{review_checks.lean}
+and its output;
+\item \path{proofs/lean-project/ProofLab/NQueensTheorem.lean} --- the proof;
+\item \texttt{problems/n-queens/CLAIM\_PACKET.md} --- claim packet (no claim);
+\item \texttt{docs/PROBLEM\_LEDGER.md} --- lifecycle record;
+\item \texttt{proofs/n-queens/paper/} --- this report and its build script.
+\end{itemize}
+
+\section{What is not claimed; residual risks}
+\label{sec:residuals}
+
+\paragraph{Not claimed.}
+New mathematics; priority in Mathlib or elsewhere; anything about readings (b)--(e);
+that $\NonAttacking$ is the unique correct formalization; equivalence with the Level~A
+list encoding; any ``AI solved $n$-queens'' framing.
+
+\paragraph{Residual risks (from the review, board-facing).}
+\begin{enumerate}[nosep]
+\item No Lean bridge \lean{IsNQueens (List.ofFn q) ↔ NonAttacking q}; two encodings coexist.
+\item Only reading (a) is proved.
+\item Definition fidelity is a human judgement, made three times; a further reader is cheap.
+\item Toolchain trust is single-machine; no \lean{lean4checker} re-check of the \texttt{.olean}.
+\item No priority or novelty; the Mathlib screen is local to the pin.
+\item The attack log's erratum (Section~\ref{sec:erratum}), now fixed, is kept on record.
+\item $n\neq 2\wedge n\neq 3$ includes the vacuous $n=0$ (Convention~\ref{conv:zero}); do not
+paraphrase as ``$n=1\vee n\ge 4$'' without the caveat.
+\item An unused \lean{import ProofLab.NQueens} in the new file; harmless, since the axiom
+print rather than the build is the gate.
+\end{enumerate}
+
+\section{Lessons}
+\label{sec:lessons}
+
+\begin{enumerate}[nosep]
+\item \textbf{Brute-force evidence must run on the typed formula.} The Attack Lead's
+check evaluated the pin's three clauses literally over all ordered pairs on $997$ boards and
+passed on the first run---and still missed a bug, because it computed with signed integers
+while the lemma list was typed in $\N$. Future attack tickets should evaluate the exact
+$\N$-typed expression (or generate the Python from the Lean text).
+\item \textbf{Freeze the statement before the proof.} Diffing the frozen text at every
+gate cost seconds and removed an entire class of ``proved a different theorem'' failures.
+\item \textbf{Isolate the hard direction.} Splitting off \lean{queens\_exists\_of\_four\_le}
+at the pin gate let the finite cases, the construction, and the review proceed as separate
+units of work.
+\item \textbf{One interface, one tactic.} The $\GoodEven$ record and the
+\lean{split\_ifs <;> omega} discipline meant that the Formalist's wave was almost entirely
+transcription, and that the Reviewer could diff hypotheses mechanically.
+\item \textbf{The review gate is not a formality.} Both deviations were real defects in a
+document that had passed a machine check; they were caught by the type checker and
+independently confirmed by the Reviewer, and the ticket that was funded to prevent this
+class of error (the transcription step) was the one that introduced it.
+\item \textbf{Kernel \lean{decide} is enough for small finite cases} ($4$ and $27$
+functions) and keeps the axiom footprint standard; \lean{native\_decide} was never needed
+and is not an accepted gate.
+\end{enumerate}
+
+\section{Conclusion}
+
+The lab set out to run its full process on a problem chosen by the board, and did so: a
+scouted and disambiguated target, a frozen statement, an informal construction with
+machine evidence and an honest dead-end map, a zero-\lean{sorry} Lean proof with a standard
+axiom footprint, an adversarial review with negative controls, and a close-out with a
+claim packet recommending no claim. The theorem was known in 1874. What the lab can now
+say, and could not before, is that the specific formal proposition in
+Section~\ref{sec:statement} follows from Lean's three standard axioms, and that the
+definition it is about has been read and stress-tested by three independent readers.
+
+\begin{thebibliography}{9}
+\bibitem{ahrens} W.~Ahrens, \emph{Mathematische Unterhaltungen und Spiele}, 2nd ed., Teubner, 1910.
+\bibitem{bellstevens} J.~Bell and B.~Stevens, ``A survey of known results and research areas for $n$-queens,'' \emph{Discrete Mathematics} 309(1):1--31, 2009.
+\bibitem{bernhardsson} B.~Bernhardsson, ``Explicit solutions to the $N$-queens problem for all $N$,'' \emph{ACM SIGART Bulletin} 2(2):7, 1991.
+\bibitem{gjn} I.~P.~Gent, C.~Jefferson, and P.~Nightingale, ``Complexity of $n$-queens completion,'' \emph{Journal of Artificial Intelligence Research} 59:815--848, 2017.
+\bibitem{hlm} E.~J.~Hoffman, J.~C.~Loessi, and R.~C.~Moore, ``Constructions for the solution of the $m$ queens problem,'' \emph{Mathematics Magazine} 42(2):66--72, 1969.
+\bibitem{pauls} E.~Pauls, ``Das Maximalproblem der Damen auf dem Schachbrete,'' \emph{Deutsche Schachzeitung} 29:129--134, 257--267, 1874.
+\bibitem{simkin} M.~Simkin, ``The number of $n$-queens configurations,'' arXiv:2107.13460, 2021.
+\bibitem{mathlib} The Mathlib Community, \emph{Mathlib}, commit \texttt{a719ba5c31} (Lean v4.10.0), 2024.
+\bibitem{lean} L.~de Moura and S.~Ullrich, ``The Lean 4 theorem prover and programming language,'' CADE 28, 2021.
+\end{thebibliography}
+
+\appendix
+
+\section{Complete Lean source}
+\label{app:lean}
+\texttt{proofs/lean-project/ProofLab/NQueensTheorem.lean}, as integrated on the close-out
+branch (identical to the reviewed commit \texttt{8ae158a}). Included verbatim from the
+repository at build time.
+
+\VerbatimInput[fontsize=\footnotesize,numbers=left,numbersep=4pt,frame=lines]{../../lean-project/ProofLab/NQueensTheorem.lean}
+
+\section{Verification transcripts}
+\label{app:transcripts}
+
+\subsection{Reviewer's Lean checks}
+Output of \texttt{lake env lean review\_checks.lean} (\texttt{review\_checks.out}):
+\VerbatimInput[fontsize=\footnotesize]{../../../attacks/n-queens-20260912-180329/review_checks.out}
+
+\subsection{Attack Lead's brute-force evidence (not proof)}
+Output of \texttt{verify\_construction.py 1000} (\texttt{verify\_output.txt}). Note that this
+script used signed integers and therefore could not detect the $\N$-truncation described in
+Section~\ref{sec:erratum}.
+\VerbatimInput[fontsize=\footnotesize]{../../../attacks/n-queens-20260912-180329/verify_output.txt}
+
+\section{Ticket timeline}
+\label{app:timeline}
+
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+UTC & ticket & role & event \\
+\midrule
+17:37 & OPE-2 & board & names the problem; approves tooling \\
+17:44 & OPE-2 & Director & Lean 4.10.0 installed and green; plan and child chain posted \\
+17:51 & OPE-3 & Scout & dossier, pin, novelty screen (PR \#3) \\
+17:53 & OPE-2 & Director & Gate 1: dossier approved; names frozen \\
+17:58 & OPE-4 & Formalist & statement stub compiles with \lean{sorryAx} (PR \#4) \\
+18:00 & OPE-2 & Director & Gate 2: stub approved; Attack Lead released \\
+18:08 & OPE-5 & Attack Lead & construction, brute check, lemma list (PR \#5) \\
+18:12 & OPE-2 & Director & Gate 4: plan approved; Formalist proof released \\
+18:20 & OPE-6 & Formalist & both theorems closed, zero \lean{sorry} (PR \#6) \\
+18:23 & OPE-2 & Director & Gate 6: rebuild and axioms re-checked; Reviewer released \\
+18:28 & OPE-7 & Reviewer & approve with residuals (PR \#7) \\
+18:34 & OPE-2 & Director & close-out: integration, erratum, ledger, claim packet (PR \#8) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

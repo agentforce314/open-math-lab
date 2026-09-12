@@ -2976,7 +2976,9 @@
         "catalog/problems/n-queens/STATEMENT.md",
         "problems/n-queens/CLAIM_PACKET.md",
         "proofs/lean-project/ProofLab/NQueens.lean",
-        "proofs/lean-project/ProofLab/NQueensTheorem.lean"
+        "proofs/lean-project/ProofLab/NQueensTheorem.lean",
+        "proofs/n-queens/paper/main.pdf",
+        "proofs/n-queens/paper/main.tex"
       ],
       "scout_issue": "OPE-3",
       "tickets": [
@@ -3049,7 +3051,8 @@
         "https://github.com/agentforce314/open-math-lab/pull/5",
         "https://github.com/agentforce314/open-math-lab/pull/6",
         "https://github.com/agentforce314/open-math-lab/pull/7"
-      ]
+      ],
+      "report": "proofs/n-queens/paper/main.pdf (internal lab report, LaTeX via tectonic; no claim)"
     },
     {
       "id": "brocard-factorial-square",
