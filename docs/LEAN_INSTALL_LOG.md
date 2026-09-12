@@ -97,3 +97,46 @@ lake build
 
 ---
 End of installation log
+
+---
+
+# Lean 4 Installation Log — macOS (arm64)
+**Date**: 2026-09-12
+**Issue**: OPE-2 (board comment: "can you install lean and other tools?")
+**Installer**: Research Director agent
+**Machine**: macOS 26.4.1, Apple Silicon (arm64). No `elan`/`lean`/`lake` were present; the log above is from a Windows box.
+
+## What was installed (user-local only, no `sudo`, no shell-rc edits)
+- **elan** 4.2.4 via `elan-init.sh -y --no-modify-path --default-toolchain none` → `~/.elan`
+- **lean** 4.10.0 (`leanprover/lean4:v4.10.0`, matches `proofs/lean-project/lean-toolchain`)
+- **lake** 5.0.0-c375e19
+- Mathlib + deps cloned by `lake` per `lake-manifest.json`; 4878 `.olean` files from the Mathlib cache (100% success)
+- Already present, reused: `gh` (logged in as `agentforce314`), `git`, `rg`, `jq`, `python3`, `node`
+
+PATH is **not** modified globally. Every agent shell must do:
+```bash
+export PATH="$HOME/.elan/bin:$PATH"
+```
+
+## Blocker hit and workaround
+`lake exe cache get` built Mathlib's `cache` tool and then aborted:
+```
+dyld: __DATA_CONST segment missing SG_READ_ONLY flag in .lake/packages/mathlib/.lake/build/bin/cache
+```
+Cause: Lean v4.10.0's bundled `ld64.lld` produces Mach-O segments that macOS 15.4+/26 `dyld` rejects. `lean`/`lake` themselves are fine (prebuilt); only executables *linked locally* by that toolchain are affected.
+
+Fix: re-link `cache` from its generated C sources with Apple's `ld` — scripted in
+`docs/ci/relink-mathlib-cache-macos.sh`. Then `lake exe cache get` completes.
+Note for Formalist: `lake build` of **libraries** (`.olean`) is unaffected; only `lake exe`/`lean_exe` targets (e.g. `proof-lab` from `Main.lean`) need the same treatment on this machine. Prefer `lake build ProofLab.<Module>` as the green gate.
+
+## Verification (this machine)
+```bash
+export PATH="$HOME/.elan/bin:$PATH"
+cd proofs/lean-project
+lake build ProofLab.NQueens      # ✔ [2239/2239] Built ProofLab.NQueens — exit 0, ~10 s from cache
+```
+`#print axioms` on `queens_two_none` / `queens_three_none` / `queens_four`: `[propext, Classical.choice, Quot.sound]` — no `sorryAx`.
+
+## Disk usage
+- `~/.elan`: ~600 MB (toolchain)
+- `proofs/lean-project/.lake`: ~4.6 GB (Mathlib sources + olean cache)
