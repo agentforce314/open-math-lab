@@ -113,7 +113,7 @@ as "encoding + witnesses landed", not "theorem proved". Grouped by domain.
 | `nash-williams-arboricity` | Nash-Williams: arboricity = max over subgraphs of ⌈e(H)/(v(H)−1)⌉. | G |
 | `erdos-ramsey-lower` | Erdős 1947 probabilistic lower bound R(k,k) > 2^{k/2}. | G |
 | `lovasz-local-lemma` | Symmetric LLL: if each bad event has prob ≤ p, depends on ≤ d others, e·p·(d+1) ≤ 1 ⇒ all avoidable. | G |
-| `expander-mixing` *(informal)* | Expander mixing lemma: e(S,T) ≈ d|S||T|/n within λ√(|S||T|). | G |
+| `expander-mixing` *(informal)* | Expander mixing lemma: e(S,T) ≈ d\|S\|\|T\|/n within λ√(\|S\|\|T\|). | G |
 
 ### Extremal set theory / order
 | ID | Statement | Math |
@@ -129,13 +129,13 @@ as "encoding + witnesses landed", not "theorem proved". Grouped by domain.
 | ID | Statement | Math |
 |----|-----------|:----:|
 | `euclid-euler-perfect` | Even perfect numbers are exactly 2^{p−1}(2^p−1) with 2^p−1 prime. | U |
-| `korselt-carmichael` | Korselt: n is Carmichael iff squarefree and (p−1) | (n−1) for all p | n. | U/G |
+| `korselt-carmichael` | Korselt: n is Carmichael iff squarefree and (p−1) \| (n−1) for all p \| n. | U/G |
 | `proth-primality` | Proth: k·2ⁿ+1 (k < 2ⁿ) is prime iff some a has a^{(N−1)/2} ≡ −1 (mod N). | U/G |
 | `legendre-three-squares` | n is a sum of three squares iff n ≠ 4^a(8b+7). | G |
 | `farey-sequence` | Adjacent Farey fractions a/b < c/d satisfy bc − ad = 1. | U |
 | `lame-euclid` | Lamé: Euclid's algorithm takes ≤ 5·(digits) steps; Fibonacci pairs are worst case. | U |
 | `lagrange-quadratic-cf` | Lagrange: continued fraction is eventually periodic iff quadratic irrational. | G |
-| `ostrowski-q` | Ostrowski: every nontrivial absolute value on ℚ is equivalent to |·|_∞ or some |·|_p. | G |
+| `ostrowski-q` | Ostrowski: every nontrivial absolute value on ℚ is equivalent to \|·\|_∞ or some \|·\|_p. | G |
 | `zsqrt5-not-ufd` | ℤ[√−5] is not a UFD: 6 = 2·3 = (1+√−5)(1−√−5). | U/G |
 | `egyptian-fractions` | Every positive rational is a sum of distinct unit fractions (Fibonacci–Sylvester greedy). | U |
 | `taxicab-1729` | 1729 = 1³+12³ = 9³+10³, the smallest such number. | U |
@@ -147,13 +147,13 @@ as "encoding + witnesses landed", not "theorem proved". Grouped by domain.
 | `wolstenholme-theorem` *(informal)* | For prime p ≥ 5, C(2p−1, p−1) ≡ 1 (mod p³). | G |
 | `zsigmondy-theorem` *(informal)* | Bang/Zsigmondy: aⁿ − 1 has a primitive prime divisor except for known exceptions. | G |
 | `sum-free-subsets` *(informal)* | Erdős: every set of n nonzero integers has a sum-free subset of size > n/3. | U/G |
-| `vosper-cauchy-davenport` *(informal)* | Vosper: equality cases of Cauchy–Davenport |A+B| ≥ |A|+|B|−1 in ℤ/p. | G |
+| `vosper-cauchy-davenport` *(informal)* | Vosper: equality cases of Cauchy–Davenport \|A+B\| ≥ \|A\|+\|B\|−1 in ℤ/p. | G |
 
 ### Algebra / linear algebra
 | ID | Statement | Math |
 |----|-----------|:----:|
 | `cauchy-binet` | det(AB) = Σ_S det(A_S) det(B_S) for rectangular A, B. | U/G |
-| `hadamard-det` | |det A| ≤ Π ‖row_i‖₂. | U/G |
+| `hadamard-det` | \|det A\| ≤ Π ‖row_i‖₂. | U/G |
 | `schur-product` | Hadamard (entrywise) product of PSD matrices is PSD. | G |
 | `circulant-det` | Determinant of a circulant = Π_j f(ω^j) over roots of unity. | U/G |
 | `sherman-morrison` | (A + uvᵀ)⁻¹ = A⁻¹ − A⁻¹uvᵀA⁻¹ / (1 + vᵀA⁻¹u). | U |
@@ -162,7 +162,7 @@ as "encoding + witnesses landed", not "theorem proved". Grouped by domain.
 | `frobenius-real-division` | Finite-dim real division algebras are ℝ, ℂ, or ℍ (Level A: dimension ∈ {1,2,4} **is** landed). | G |
 | `noether-normalization` | A f.g. k-algebra is a finite module over a polynomial subring. | G |
 | `mason-stothers` | Polynomial abc: deg(max) ≤ #distinct roots of abc − 1 for coprime a+b=c. | G |
-| `schwartz-zippel` | A nonzero degree-d polynomial vanishes on ≤ d·|S|^{n−1} points of Sⁿ. | G |
+| `schwartz-zippel` | A nonzero degree-d polynomial vanishes on ≤ d·\|S\|^{n−1} points of Sⁿ. | G |
 | `combinatorial-nullstellensatz` | Alon: nonzero coefficient of Πx_i^{t_i} ⇒ non-vanishing on a box of sizes t_i+1. | G |
 | `wantzel-constructible` | Constructible numbers have degree a power of 2 (cube cannot be doubled). | G |
 | `d8-ne-q8` | Dihedral D₈ and quaternion Q₈ are non-isomorphic (count elements of order 2). | U |
@@ -172,7 +172,7 @@ as "encoding + witnesses landed", not "theorem proved". Grouped by domain.
 ### Enumerative combinatorics / partitions
 | ID | Statement | Math |
 |----|-----------|:----:|
-| `n-fold-inclusion-exclusion` | |∪A_i| = Σ (−1)^{|S|+1} |∩_{S} A_i|. | U |
+| `n-fold-inclusion-exclusion` | \|∪A_i\| = Σ (−1)^{\|S\|+1} \|∩_{S} A_i\|. | U |
 | `hook-length` | #SYT of shape λ = n! / Π hook lengths. | G |
 | `kraft-inequality` | A prefix-free code with lengths ℓ_i exists iff Σ 2^{−ℓ_i} ≤ 1. | U |
 | `gale-shapley` | Deferred acceptance always yields a stable matching. | U |
