@@ -1,6 +1,6 @@
 # Open Math Lab — mathforge
 
-**GitHub:** https://github.com/Paul3435/open-math-lab  
+**GitHub:** https://github.com/agentforce314/open-math-lab (fork of [Paul3435/open-math-lab](https://github.com/Paul3435/open-math-lab); default branch `main`)  
 **PR workflow for agents:** [`docs/GIT_AND_PR_WORKFLOW.md`](docs/GIT_AND_PR_WORKFLOW.md)
 
 Personal multi-agent research lab (Paperclip company) that **builds and runs** `mathforge`: a local toolkit for selecting *tractable* open mathematical problems, attacking them with specialized agent skills, cross-reviewing claims, and recording machine-checkable progress.

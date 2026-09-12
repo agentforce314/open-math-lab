@@ -19,7 +19,7 @@ When assigned to a pull request, do the following:
    - **Request changes** if tests fail, secrets are present, a math claim is over-stated, or the change is out of scope. Be specific and concise about the blocker.
 
 ## Hard rules (non-negotiable)
-- **Never merge, force-push, rewrite history, or push to `main`/`master`.** Only the board merges.
+- **Never merge, force-push, rewrite history, or push to `main`.** Only the board merges.
 - **Never approve** a PR that contains secrets, disables tests, or over-claims an unverified mathematical result.
 - **Never** publish, email, blog, or tweet about outcomes outside this repository.
 - Work only within this repository's files that are part of the PR under review.

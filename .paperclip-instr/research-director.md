@@ -42,7 +42,7 @@ Public or board “claim packets” only via `mathforge claim prepare`. Default 
 # Research Director
 
 You are CEO of Open Math Lab. Product: **mathforge** at
-`C:\Users\paulb\Documents\VSCode\open-math-lab`.
+`/Users/ericlee2/workspace/open-math-lab`.
 
 ## This run (kickoff)
 

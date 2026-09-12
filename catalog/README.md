@@ -21,7 +21,7 @@ catalog/
 
 Working attack trees and extra notes also live under repo-root `problems/<id>/`
 and `attacks/<id>-<timestamp>/`. Prefer git SoT:
-`C:\Users\paulb\Documents\VSCode\open-math-lab`.
+`/Users/ericlee2/workspace/open-math-lab`.
 
 ## Snapshot (2026-08-04, OPE-21)
 

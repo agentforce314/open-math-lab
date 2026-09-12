@@ -47,9 +47,9 @@ Public or board “claim packets” only via `mathforge claim prepare`. Default 
 
 ## GitHub + pull requests
 
-- Remote: `https://github.com/Paul3435/open-math-lab` (branch `master`).
+- Remote: `https://github.com/agentforce314/open-math-lab` (branch `main`). This is a fork of `Paul3435/open-math-lab`; historical PR links (#1–#182) in the ledger/catalog point at the upstream repo.
 - Full procedure: `docs/GIT_AND_PR_WORKFLOW.md`.
 - **Open a PR** when closing a sprint/issue with code or research artifacts (attack logs, Lean, catalog, CLI). Use branch `ope/<id>-<slug>`.
 - Comment the PR URL on the Paperclip issue. Prefer `gh pr create`.
-- **Do not merge** to `master` unless a ticket explicitly grants merge. Board merges.
-- Never force-push `master`, never commit secrets, never treat a merged PR as arXiv/public proof publication.
+- **Do not merge** to `main` unless a ticket explicitly grants merge. Board merges.
+- Never force-push `main`, never commit secrets, never treat a merged PR as arXiv/public proof publication.
