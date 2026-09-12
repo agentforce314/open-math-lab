@@ -175,3 +175,51 @@ Infra HIT (use, do not re-prove): `Function.Injective` (`Logic/Function/Defs.lea
 `Fin`, `Nat.ModEq` (`Data/Nat/ModEq.lean`), `omega`, `decide`, `fin_cases`.
 In-repo: `ProofLab/NQueens.lean` Level A only (above). **Verdict: genuine ProofLab
 gap for the namesake; `expected: known-classical`.**
+
+## Lean pin (OPE-4, Formalist — statement only, stubbed)
+
+**File:** `proofs/lean-project/ProofLab/NQueensTheorem.lean` (new; imported from
+`ProofLab.lean`; `ProofLab/NQueens.lean` Level A untouched). Namespace
+`ProofLab.NQueensTheorem`. Branch `ope/4-nqueens-statement-pin`; **not for `main`
+while `sorryAx` is present.**
+
+Exact statement text as compiled (identical to the "Exact Lean-shaped statement"
+block above — only the `sorry` tags and the optional split differ):
+
+```lean
+def NonAttacking {n : ℕ} (q : Fin n → Fin n) : Prop :=
+  Function.Injective q ∧
+  ∀ i j : Fin n, i ≠ j →
+    (i : ℕ) + (q i : ℕ) ≠ (j : ℕ) + (q j : ℕ) ∧
+    (i : ℕ) + (q j : ℕ) ≠ (j : ℕ) + (q i : ℕ)
+
+theorem queens_exists_of_four_le (n : ℕ) (hn : 4 ≤ n) :
+    ∃ q : Fin n → Fin n, NonAttacking q := by
+  sorry -- STUB: proof in OPE-6
+
+theorem n_queens_exists_iff (n : ℕ) :
+    (∃ q : Fin n → Fin n, NonAttacking q) ↔ (n ≠ 2 ∧ n ≠ 3) := by
+  sorry -- STUB: proof in OPE-6
+```
+
+- `queens_exists_of_four_le` is the optional split (the `n ≥ 4` construction,
+  i.e. the only hard direction) so OPE-6 can land/review it separately; the
+  namesake is still `n_queens_exists_iff`, statement unchanged from the pin.
+- `n = 0` convention confirmed: `NonAttacking` is vacuous on `Fin 0 → Fin 0`
+  (empty placement), so the RHS `n ≠ 2 ∧ n ≠ 3` is intentional and total in `n`.
+- Sanity check compiled: `example : NonAttacking ![1, 3, 0, 2] := by unfold
+  NonAttacking; decide` (the PR #174 `n = 4` witness under the function encoding).
+- Bridge lemma `IsNQueens (List.ofFn q) ↔ NonAttacking q` **deferred**: needs
+  `List.getElem_ofFn` / `List.nodup_ofFn` plumbing, i.e. real proof work and a
+  third `sorry`; OPE-6 may add it if it helps reuse `queens_two_none` / `queens_three_none`.
+
+**Build (2026-09-12, Lean v4.10.0, Mathlib `a719ba5c31`, from cache):**
+`lake build ProofLab.NQueensTheorem` → exit 0, two warnings
+(`NQueensTheorem.lean:68:8` and `:74:8`, `declaration uses 'sorry'`).
+
+**`#print axioms` — now (stub) vs. required for done:**
+
+| declaration | now | required to mark OPE-6 done |
+|---|---|---|
+| `n_queens_exists_iff` | `[sorryAx]` | subset of `[propext, Classical.choice, Quot.sound]`, **no `sorryAx`** |
+| `queens_exists_of_four_le` | `[sorryAx]` | same |
