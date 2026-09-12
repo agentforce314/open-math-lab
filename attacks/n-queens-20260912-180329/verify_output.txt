@@ -1,0 +1,9 @@
+range: 4 <= n <= 1000; boards checked per residue class n%6: {0: 166, 1: 166, 2: 166, 3: 166, 4: 167, 5: 166}
+clauses: bound, Function.Injective, i+q i ≠ j+q j, i+q j ≠ j+q i (all ordered pairs)
+primary construction (E1 / E2 / odd corner extension): PASS
+even-n no-fixed-point side condition: PASS
+alt knight (2r % n) on n%6 in {1,5}: PASS
+bonus: E2 formula on n%6 = 4: PASS
+sample n=8 (E2): [3, 5, 7, 1, 6, 0, 2, 4]
+sample n=9 (odd, corner ext of n=8): [3, 5, 7, 1, 6, 0, 2, 4, 8]
+sample n=10 (E1): [1, 3, 5, 7, 9, 0, 2, 4, 6, 8]
